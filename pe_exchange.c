@@ -64,15 +64,22 @@ void cleanup_orders_queue(Queue* queue) {
 }
 
 void cleanup_orderbook() {
-
+    // Loop Products
+        // Loop PriceLevels
+                // Loop each OrderNode
+                    // Free each OrderNode
+            // Free each PriceLevel
+        // Free each product
 }
 
 void cleanup_products() {
-
+    // free products
 }
 
 void cleanup_traders() {
-
+    // close fifos
+    // Unlink fifos
+    // free traders**
 }
 
 
@@ -91,6 +98,10 @@ Trader** create_traders(int num_traders, char **argv) {
         memset(buf, 0, MAX_FIFO_LENGTH);
         num_bytes = sprintf(buf, FIFO_TRADER, i);
         strncpy(traders[i]->trader_fifo, buf, num_bytes);
+        
+        // Create trader specific fifo pipes
+        mkfifo(traders[i]->exchange_fifo, 0666);
+        mkfifo(traders[i]->trader_fifo, 0666);
         
         // Create new process for trader
         pid_t pid = fork();
@@ -231,7 +242,7 @@ int main(int argc, char **argv) {
             // Handle order from trader with pid x
             int trader_id = trader_pid_to_id(pid, traders);
             if (trader_id) {
-                
+
             }
 
         }
