@@ -210,11 +210,18 @@ void print_trader_positions() {
 // ------------------ Main ------------------
 
 int main(int argc, char **argv) {
+    printf("[PEX] Starting\n");
     // list of ptrs to pid's (read from pid fifo to digest and process order) 
     orders_queue = create_orders_queue();
 
     // Create order book for each product
     products = read_products_file();
+    int num_products = sizeof(products)/sizeof(products[0]);
+    printf("Trading %d products:", num_products);
+    for (int i = 0; i < num_products; i++) {
+        printf(" %s", products[i]);
+    }
+
 
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
