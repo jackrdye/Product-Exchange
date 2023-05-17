@@ -99,7 +99,8 @@ Trader** create_traders(int num_traders, char **argv) {
         // Set FIFO_EXCHANGE
         memset(buf, 0, MAX_FIFO_LENGTH);
         num_bytes = sprintf(buf, FIFO_EXCHANGE, i);
-        strncpy(traders[i]->exchange_fifo, buf, num_bytes);
+        strcpy(traders[i]->exchange_fifo, buf);
+        // strncpy(traders[i]->exchange_fifo, buf, num_bytes);
         // Set FIFO_TRADER
         memset(buf, 0, MAX_FIFO_LENGTH);
         num_bytes = sprintf(buf, FIFO_TRADER, i);
