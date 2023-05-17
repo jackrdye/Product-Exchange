@@ -192,8 +192,14 @@ char** read_products_file(int *size) {
             chunks += 1;
             products = realloc(products, 20 * chunks * sizeof(char*));
         }
+        // Remove newline character
+        char *newline;
+        if ((newline = strchr(product, '\n')) != NULL) {
+            *newline = '\0';
+        }
         products[i] = malloc(sizeof(char) * MAX_PRODUCT_LEN); // Allocate memory for product
         strncpy(products[i], product, MAX_PRODUCT_LEN); // Copy product from file
+
         i++;
     }
     fclose(file);
