@@ -7,14 +7,15 @@
 
 #endif
 
-typedef struct Trader {
+typedef struct Trader Trader;
+struct Trader {
     int id;
     int pid;
     char exchange_fifo[MAX_FIFO_LENGTH];
     char trader_fifo[MAX_FIFO_LENGTH];
     int exchange_fd;
     int trader_fd;
-} Trader;
+};
 
 // ----------- OrderBook ------------
 typedef struct OrderNode OrderNode;
