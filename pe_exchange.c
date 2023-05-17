@@ -215,7 +215,8 @@ int main(int argc, char **argv) {
 
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
-
+    printf("Num traders - (%d)\n", (argc-2));
+    printf("Traders should be created\n");
     // Register signal handlers
     register_signals();
 
