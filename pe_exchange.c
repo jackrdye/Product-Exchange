@@ -104,7 +104,8 @@ Trader** create_traders(int num_traders, char **argv) {
         // Set FIFO_TRADER
         memset(buf, 0, MAX_FIFO_LENGTH);
         num_bytes = sprintf(buf, FIFO_TRADER, i);
-        strncpy(traders[i]->trader_fifo, buf, num_bytes);
+        strcpy(traders[i]->trader_fifo, buf);
+        // strncpy(traders[i]->trader_fifo, buf, num_bytes);
         
         // Create trader specific fifo pipes
         printf("[PEX] Creating FIFO %s\n", traders[i]->exchange_fifo);
