@@ -1,12 +1,238 @@
 /**
  * comp2017 - assignment 3
- * <your name>
- * <your unikey>
+ * Jack Dye
+ * jdye7319
  */
 
 #include "pe_exchange.h"
 
+bool market_open = false;
+bool order = false;
+bool terminate = false;
+Queue* orders_queue;
+Trader** traders;
+char** products;
+
+
+// ------------------------- Signals -----------------------------
+void sigusr1_handler(int signal_number, siginfo_t *info, void *ucontext) {
+	// Received an order from trader
+	order = true;
+	int trader_pid = info->si_pid;
+    enqueue(orders_queue, trader_pid);
+}
+
+void terminate_handler(int signal_number) {
+    // Recieved a signal to terminate
+    terminate = true;
+}
+
+void register_signals() {
+    // Register SIGUSR1 Signal
+    struct sigaction sigusr1_sa;
+    sigusr1_sa.sa_handler = sigusr1_handler;
+    sigemptyset(&sigusr1_sa.sa_mask);
+    sigusr1_sa.sa_flags = 0;
+    if (sigaction(SIGUSR1, &sigusr1_sa, NULL) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
+    // Register Termination Signal - Ensure Cleanup
+    struct sigaction terminate_sa;
+    terminate_sa.sa_handler = terminate_handler;
+    sigemptyset(&terminate_sa.sa_mask);
+    terminate_sa.sa_flags = 0;
+    if (sigaction(SIGTERM, &terminate_sa, NULL) == -1 || sigaction(SIGINT, &terminate_sa, NULL) == -1) {
+        perror("sigaction - register termination cleanup");
+        exit(1);
+    }
+}
+
+void signal_trader(int trader_pid) {
+    kill(trader_pid, SIGUSR1);
+}
+
+
+// ---------------- Cleanup Functions -----------------
+// Free Orders Queue
+void cleanup_orders_queue(Queue* queue) {
+    while (queue->front != NULL) {
+        Node* temp = queue->front;
+        queue->front = temp->next;
+        free(temp);
+    }
+}
+
+void cleanup_orderbook() {
+
+}
+
+void cleanup_products() {
+
+}
+
+void cleanup_traders() {
+
+}
+
+
+// ---------------- Setup Functions ------------------
+Trader** create_traders(int num_traders, char **argv) {
+    traders = (Trader**) malloc((num_traders) * sizeof(Trader*));
+    for (int i = 0; i < num_traders; i++) {
+        traders[i]->id = i; // Set trader id
+        char buf[MAX_FIFO_LENGTH];
+        int num_bytes;
+        // Set FIFO_EXCHANGE
+        memset(buf, 0, MAX_FIFO_LENGTH);
+        num_bytes = sprintf(buf, FIFO_EXCHANGE, i);
+        strncpy(traders[i]->exchange_fifo, buf, num_bytes);
+        // Set FIFO_TRADER
+        memset(buf, 0, MAX_FIFO_LENGTH);
+        num_bytes = sprintf(buf, FIFO_TRADER, i);
+        strncpy(traders[i]->trader_fifo, buf, num_bytes);
+        
+        // Create new process for trader
+        pid_t pid = fork();
+        if (pid < 0) {
+            fprintf(stderr, "Fork Trader Process Failed\n");
+        } else if (pid == 0) {
+            // Child Process - Replace child process with trader process
+            execl(argv[i+2], i, NULL);
+        } else {
+            // Parent Process
+            traders[i]->pid = pid;
+        }
+        traders[i]->trader_fd = open(traders[i]->trader_fifo, O_RDONLY | O_NONBLOCK);
+        if (traders[i]->exchange_fd == -1) {
+            perror("Exchange: Opening Exchange Pipe - Read Mode");
+            exit(1);
+        }
+
+        traders[i]->exchange_fd = open(traders[i]->exchange_fifo, O_WRONLY);
+        fcntl(traders[i]->trader_fd, F_SETFL, O_NONBLOCK);
+        if (traders[i]->trader_fd == -1) {
+            perror("Exchange: Opening Trader Pipe - Write Mode");
+            exit(1);
+        }
+    }
+    return traders;
+}
+
+Queue* create_orders_queue() {
+    Queue* queue = (Queue*)malloc(sizeof(Queue));
+    queue->front = NULL;
+    queue->rear = NULL;
+    return queue;
+}
+
+// --------------- OrderBook ------------------
+OrderBook* create_orderbook(char* product) {
+    OrderBook* orderbook = malloc(sizeof(OrderBook));
+    strncpy(orderbook->product, product, strlen(product));
+    orderbook->buys = malloc(sizeof(PriceLevel*));
+    orderbook->sells = malloc(sizeof(PriceLevel*));
+    return orderbook;
+}
+
+
+// ---------------- Helper Functions ---------------
+int trader_pid_to_id(int pid, Trader** traders) {
+    // Currently O(n) can implement hash table to make it average constant time
+    for (int i = 0; i < (sizeof(traders)/sizeof(Trader)); i++) {
+        if (pid == traders[i]->pid) {
+            return traders[i]->id;
+        }
+    }
+    return -1;
+}
+
+char** read_products_file() {
+    char** products = malloc(sizeof(char*) * 20);
+    FILE *file = fopen("products.txt", "r");
+    if (file == NULL) {
+        write(STDERR_FILENO, "Failed to open products file\n", strlen("Failed to open products file\n"));
+        return;
+    }
+
+    char product[MAX_PRODUCT_LEN];
+    int i = 0;
+    int chunks = 1;
+    while (fgets(product, MAX_PRODUCT_LEN, file) != NULL) {
+        if (i % 20 == 0) {
+            // Extend products array (every 20 products)
+            chunks += 1;
+            products = realloc(products, 20 * chunks * sizeof(char*));
+        }
+        products[i] = malloc(sizeof(char) * MAX_PRODUCT_LEN); // Allocate memory for product
+        strncpy(products[i], product, MAX_PRODUCT_LEN); // Copy product from file
+        i++;
+    }
+    fclose(file);
+
+    // Remove extra products space
+    products = realloc(products, i * sizeof(char*));
+    if (products == NULL) {
+        write(STDERR_FILENO, "Failed to allocate memory\n", strlen("Failed to allocate memory\n"));
+    }
+    return products;
+}
+
+void print_orderbook() {
+
+}
+
+void print_trader_positions() {
+
+}
+
+
+
+
+// ------------------ Main ------------------
+
 int main(int argc, char **argv) {
-	printf("TODO\n");
+    // list of ptrs to pid's (read from pid fifo to digest and process order) 
+    orders_queue = create_orders_queue();
+
+    // Create order book for each product
+    products = read_products_file();
+    
+    // Create traders from command line
+    traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
+
+    // Register signal handlers
+    register_signals();
+
+    // Send market open Message 
+    for (int i = 0; i < argc-2; i++) {
+        write(traders[i]->exchange_fd, "MARKET OPEN;", strlen("MARKET OPEN;"));
+        signal_trader(traders[i]->pid);
+    }
+    market_open = true;
+
+    while (1) {
+        if (terminate == true) {
+            cleanup_orders_queue(orders_queue);
+        } else if (market_open == false) {
+            
+        } else if (market_open == true && order == false) {
+            pause();
+        } else if (market_open == true && order == true) {
+            // Loop through dequeue & handle each order
+            int pid = dequeue(orders_queue);
+            if (pid == -1) {
+                // All orders in queue handled
+                order = false;
+                continue;
+            }
+            // Handle order from trader with pid x
+            int trader_id = trader_pid_to_id(pid, traders);
+
+        }
+
+
+    }
+
 	return 0;
 }
