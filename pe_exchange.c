@@ -118,6 +118,8 @@ Trader** create_traders(int num_traders, char **argv) {
             // Parent Process
             traders[i]->pid = pid;
         }
+        printf("Launched %s\n", argv[i+2]);
+        
         traders[i]->trader_fd = open(traders[i]->trader_fifo, O_RDONLY | O_NONBLOCK);
         if (traders[i]->exchange_fd == -1) {
             perror("Exchange: Opening Exchange Pipe - Read Mode");
@@ -130,6 +132,7 @@ Trader** create_traders(int num_traders, char **argv) {
             perror("Exchange: Opening Trader Pipe - Write Mode");
             exit(1);
         }
+        printf("Trader %d should be created\n", i);
     }
     return traders;
 }
