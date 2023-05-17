@@ -165,7 +165,7 @@ int trader_pid_to_id(int pid, Trader** traders) {
     return -1;
 }
 
-char** read_products_file() {
+char** read_products_file(int *size) {
     char** products = malloc(sizeof(char*) * 20);
     FILE *file = fopen("products.txt", "r");
     if (file == NULL) {
@@ -193,6 +193,7 @@ char** read_products_file() {
     if (products == NULL) {
         write(STDERR_FILENO, "Failed to allocate memory\n", strlen("Failed to allocate memory\n"));
     }
+    *size = i;
     return products;
 }
 
@@ -215,9 +216,9 @@ int main(int argc, char **argv) {
     orders_queue = create_orders_queue();
 
     // Create order book for each product
-    products = read_products_file();
-    int num_products = sizeof(products)/sizeof(products[0]);
-    printf("Trading %d products:", num_products);
+    int num_products = 0;
+    products = read_products_file(&num_products);
+    printf("[PEX] Trading %d products:", num_products);
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
     }
