@@ -122,8 +122,9 @@ Trader** create_traders(int num_traders, char **argv) {
         } else if (pid == 0) {
             // Child Process - Replace child process with trader process
             int length = (i / 10) + 1;
-            char id[length];
+            char id[20];
             sprintf(id,"%d", i);
+            id[length] = '\0';
             execl(argv[i+2], id, NULL);
         } else {
             // Parent Process
