@@ -17,25 +17,29 @@ typedef struct Trader {
 } Trader;
 
 // ----------- OrderBook ------------
-typedef struct OrderNode {
+typedef struct OrderNode OrderNode;
+typedef struct PriceLevel PriceLevel;
+typedef struct OrderBook OrderBook;
+
+struct OrderNode {
     int quantity;
     int trader_id;
     int order_id;
-    struct Order* next;
-} OrderNode;
+    struct OrderNode* next;
+} ;
 
-typedef struct PriceLevel {
+struct PriceLevel {
     int price;
-    OrderNode* head; // LinkedList of orders
+    OrderNode* head; // first order in price level - LinkedList of orders
     PriceLevel* next; // Next price level
-} PriceLevel;
+};
 
-typedef struct OrderBook {
+struct OrderBook {
     char product[MAX_PRODUCT_LEN];
     PriceLevel* buys; // LinkedList - Head is highest PriceLevel
     PriceLevel* sells; // LinkedList - Head is lowest PriceLevel 
 
-} OrderBook;
+};
 
 void insert_order() {
     // Insert in existing pricelevel

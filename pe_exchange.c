@@ -30,9 +30,9 @@ void terminate_handler(int signal_number) {
 void register_signals() {
     // Register SIGUSR1 Signal
     struct sigaction sigusr1_sa;
-    sigusr1_sa.sa_handler = sigusr1_handler;
+    sigusr1_sa.sa_sigaction = sigusr1_handler;
     sigemptyset(&sigusr1_sa.sa_mask);
-    sigusr1_sa.sa_flags = 0;
+    sigusr1_sa.sa_flags = SA_SIGINFO;
     if (sigaction(SIGUSR1, &sigusr1_sa, NULL) == -1) {
         perror("sigaction");
         exit(1);
@@ -98,7 +98,9 @@ Trader** create_traders(int num_traders, char **argv) {
             fprintf(stderr, "Fork Trader Process Failed\n");
         } else if (pid == 0) {
             // Child Process - Replace child process with trader process
-            execl(argv[i+2], i, NULL);
+            char id[20];
+            sprintf(id,"%d", i);
+            execl(argv[i+2], id, NULL);
         } else {
             // Parent Process
             traders[i]->pid = pid;
@@ -152,7 +154,7 @@ char** read_products_file() {
     FILE *file = fopen("products.txt", "r");
     if (file == NULL) {
         write(STDERR_FILENO, "Failed to open products file\n", strlen("Failed to open products file\n"));
-        return;
+        exit(EXIT_FAILURE);
     }
 
     char product[MAX_PRODUCT_LEN];
@@ -197,7 +199,7 @@ int main(int argc, char **argv) {
 
     // Create order book for each product
     products = read_products_file();
-    
+
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
 
@@ -228,6 +230,9 @@ int main(int argc, char **argv) {
             }
             // Handle order from trader with pid x
             int trader_id = trader_pid_to_id(pid, traders);
+            if (trader_id) {
+                
+            }
 
         }
 
