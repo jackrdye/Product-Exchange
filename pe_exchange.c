@@ -121,7 +121,8 @@ Trader** create_traders(int num_traders, char **argv) {
             fprintf(stderr, "Fork Trader Process Failed\n");
         } else if (pid == 0) {
             // Child Process - Replace child process with trader process
-            char id[20];
+            int length = (i / 10) + 1;
+            char id[length];
             sprintf(id,"%d", i);
             execl(argv[i+2], id, NULL);
         } else {
@@ -247,7 +248,6 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 
-    printf("Launching traders\n");
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
     printf("Num traders - (%d)\n", (argc-2));
