@@ -239,8 +239,9 @@ int main(int argc, char **argv) {
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
     }
+    printf("\n");
 
-
+    printf("Launching traders\n");
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
     printf("Num traders - (%d)\n", (argc-2));
