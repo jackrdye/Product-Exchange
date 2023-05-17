@@ -87,7 +87,7 @@ void cleanup_traders() {
 Trader** create_traders(int num_traders, char **argv) {
     traders = (Trader**) malloc((num_traders) * sizeof(Trader*));
     for (int i = 0; i < num_traders; i++) {
-        Trader* new_trader = malloc(sizeof(Trader*));
+        Trader* new_trader = (Trader*) malloc(sizeof(Trader));
         traders[i] = new_trader;
         traders[i]->id = i; // Set trader id
         char buf[MAX_FIFO_LENGTH];
