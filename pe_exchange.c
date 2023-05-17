@@ -253,8 +253,7 @@ int main(int argc, char **argv) {
 
     // Create traders from command line
     traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
-    printf("Num traders - (%d)\n", (argc-2));
-    printf("Traders should be created\n");
+    
     // Register signal handlers
     register_signals();
 
@@ -264,7 +263,6 @@ int main(int argc, char **argv) {
         signal_trader(traders[i]->pid);
     }
     market_open = true;
-    printf("Market should be open\n");
     while (1) {
         if (terminate == true) {
             cleanup_orders_queue(orders_queue);
