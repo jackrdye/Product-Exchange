@@ -176,9 +176,16 @@ char** read_products_file(int *size) {
         exit(EXIT_FAILURE);
     }
 
+
     char product[MAX_PRODUCT_LEN];
     int i = 0;
     int chunks = 1;
+    
+    // Skip n_items line
+    if (fgets(product, sizeof(product), file) == NULL) {
+        exit(EXIT_FAILURE);
+    }
+
     while (fgets(product, MAX_PRODUCT_LEN, file) != NULL) {
         if (i % 20 == 0) {
             // Extend products array (every 20 products)
