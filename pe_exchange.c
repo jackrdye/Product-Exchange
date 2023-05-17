@@ -88,6 +88,10 @@ Trader** create_traders(int num_traders, char **argv) {
     traders = (Trader**) malloc((num_traders) * sizeof(Trader*));
     for (int i = 0; i < num_traders; i++) {
         Trader* new_trader = (Trader*) malloc(sizeof(Trader));
+        if (new_trader == NULL) {
+            write(STDERR_FILENO, "Memory allocation failed.\n", strlen("Memory allocation failed.\n"));
+            exit(EXIT_FAILURE);
+        }
         traders[i] = new_trader;
         traders[i]->id = i; // Set trader id
         char buf[MAX_FIFO_LENGTH];
