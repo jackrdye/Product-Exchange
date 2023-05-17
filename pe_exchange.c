@@ -235,6 +235,7 @@ int main(int argc, char **argv) {
             pause();
         } else if (market_open == true && order == true) {
             // Loop through dequeue & handle each order
+            printf("Handle incoming order\n");
             int pid = dequeue(orders_queue);
             if (pid == -1) {
                 // All orders in queue handled
