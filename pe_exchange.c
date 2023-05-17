@@ -106,7 +106,7 @@ Trader** create_traders(int num_traders, char **argv) {
         num_bytes = sprintf(buf, FIFO_TRADER, i);
         strcpy(traders[i]->trader_fifo, buf);
         // strncpy(traders[i]->trader_fifo, buf, num_bytes);
-        
+        if (num_bytes){}
         // Create trader specific fifo pipes
         // printf("[PEX] Creating FIFO %s\n", traders[i]->exchange_fifo);
         mkfifo(traders[i]->exchange_fifo, 0666);
