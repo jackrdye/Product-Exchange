@@ -21,7 +21,7 @@
 #define MAX_FIFO_LENGTH 32
 #define CHUNK_SIZE 500 // Number of Order Pointers in each Chunck
 #define MAX_MESSAGE_LEN 64
-#define MAX_PRODUCT_LEN 16
+#define MAX_PRODUCT_LEN 17
 
 #endif
 
