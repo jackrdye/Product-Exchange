@@ -73,7 +73,7 @@ void cleanup_orderbook() {
 }
 
 void cleanup_products() {
-    // free products
+    // free products list
 }
 
 void cleanup_traders() {
