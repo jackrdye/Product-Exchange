@@ -123,9 +123,11 @@ Trader** create_traders(int num_traders, char **argv) {
             // Child Process - Replace child process with trader process
             int length = (i / 10) + 1;
             char id[20];
+            memset(id, '\0', 20);
             sprintf(id,"%d", i);
             id[length] = '\0';
-            execl(argv[i+2], id, NULL);
+            // printf("%s");
+            execl(argv[i+2], argv[i+2], id, NULL);
         } else {
             // Parent Process
             traders[i]->pid = pid;
