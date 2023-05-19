@@ -5,10 +5,13 @@
  */
 
 #include "pe_exchange.h"
+int trader_pid_to_id(int pid, Trader** traders);
 
 bool market_open = false;
 bool order = false;
 bool terminate = false;
+int num_disconected_traders;
+bool trading_complete = false;
 Queue* orders_queue;
 Trader** traders;
 char** products;
@@ -25,6 +28,15 @@ void sigusr1_handler(int signal_number, siginfo_t *info, void *ucontext) {
 void terminate_handler(int signal_number) {
     // Recieved a signal to terminate
     terminate = true;
+}
+
+void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext) {
+    int trader_id = trader_pid_to_id(info->si_pid, traders);
+    printf("[PEX] Trader %d disconnected", trader_id);
+    num_disconected_traders ++;
+    if (num_disconected_traders == (sizeof(traders)/sizeof(Trader))) {
+        trading_complete = true;
+    }
 }
 
 void register_signals() {
