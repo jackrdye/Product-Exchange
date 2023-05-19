@@ -31,6 +31,7 @@ void terminate_handler(int signal_number) {
 }
 
 void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext) {
+    // Trader Disconnected
     int trader_id = trader_pid_to_id(info->si_pid, traders);
     printf("[PEX] Trader %d disconnected", trader_id);
     num_disconected_traders ++;
@@ -46,7 +47,7 @@ void register_signals() {
     sigemptyset(&sigusr1_sa.sa_mask);
     sigusr1_sa.sa_flags = SA_SIGINFO;
     if (sigaction(SIGUSR1, &sigusr1_sa, NULL) == -1) {
-        perror("sigaction");
+        perror("sigaction - register SIGUSR1");
         exit(1);
     }
     // Register Termination Signal - Ensure Cleanup
@@ -56,6 +57,15 @@ void register_signals() {
     terminate_sa.sa_flags = 0;
     if (sigaction(SIGTERM, &terminate_sa, NULL) == -1 || sigaction(SIGINT, &terminate_sa, NULL) == -1) {
         perror("sigaction - register termination cleanup");
+        exit(1);
+    }
+    // Register Child Process (Trader) Termination Signal
+    struct sigaction childterminate_sa;
+    childterminate_sa.sa_sigaction = child_terminates_handler;
+    sigemptyset(&childterminate_sa.sa_mask);
+    childterminate_sa.sa_flags = SA_SIGINFO;
+    if (sigaction(SIGCHLD, &childterminate_sa, NULL) == -1) {
+        perror("sigaction - register childterminate");
         exit(1);
     }
 }
