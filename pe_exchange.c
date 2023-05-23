@@ -8,7 +8,7 @@
 int trader_pid_to_id(int pid, Trader** traders);
 
 bool market_open = false;
-bool order = false;
+bool order_pending = false;
 bool terminate = false;
 int num_disconected_traders;
 bool trading_complete = false;
@@ -21,7 +21,7 @@ OrderBook** orderbooks;
 // ------------------------- Signals -----------------------------
 void sigusr1_handler(int signal_number, siginfo_t *info, void *ucontext) {
 	// Received an order from trader
-	order = true;
+	order_pending = true;
 	int trader_pid = info->si_pid;
     enqueue(orders_queue, trader_pid);
 }
@@ -272,8 +272,8 @@ void notify_all_traders(int trader_id, char * order_type, char *product, int qua
     }
 }
 
+// Notify 0-ACCEPTED, 1-AMENDED, 2-CANCELLED, 3-INVALID
 void notify_trader(int trader_id, unsigned int order_id, int message_type) {
-    // Notify ACCEPTED, AMENDED, CANCELLED, INVALID
     char type[15]; memset(type, 0, sizeof(type));
     if (message_type == 0) {
         strcpy(type, "ACCEPTED");
@@ -288,7 +288,7 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
         return;
     } else {
         // Invalid - 
-        perror("Exchange Error - Notify Trader - Invalid message type");
+        perror("Exchange Error -Notify Trader - Invalid message type");
         exit(EXIT_FAILURE);
     }
     char buf[64]; memset(buf, 0, sizeof(buf));
@@ -304,6 +304,98 @@ OrderBook* create_orderbook(char* product) {
     orderbook->buys = malloc(sizeof(PriceLevel*));
     orderbook->sells = malloc(sizeof(PriceLevel*));
     return orderbook;
+}
+
+// void insert_pricelevel_into_orderbook() {
+
+// }
+
+// void insert_order_into_pricelevel() {
+
+// }
+
+void remove_order(OrderNode* order) {
+    PriceLevel* pricelevel = order->pricelevel;
+    
+    // Remove 1st order - Pricelevel has only one order
+    if (pricelevel->head == order && order->next == NULL) {
+        pricelevel->head == NULL;
+        free(order); // free order
+        remove_pricelevel_from_orderbook(pricelevel); //Remove empty pricelevel
+        return;
+    } 
+    // Remove 1st order - Pricelevel has multiple orders
+    else if (pricelevel->head == order && order->next != NULL) {
+        pricelevel->head = order->next;
+        free(order);
+        return;
+    }
+
+    // Remove non-first order
+    OrderNode* current_order = pricelevel->head;
+    while (current_order != NULL) {
+        if (current_order->next == order) {
+            current_order->next = order->next;
+            OrderNode* temp = current_order->next;
+            current_order->next = temp->next;
+            free(temp);
+            return;
+        }
+        current_order = current_order->next;
+    }
+}
+
+void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
+    // Identify BUY or SELL orderbook
+    PriceLevel** head_ref;
+    if (pricelevel->buy_or_sell == "BUY") {
+        head_ref = &pricelevel->orderbook->buys;
+    } else if (pricelevel->buy_or_sell == "SELL") {
+        head_ref = &pricelevel->orderbook->sells;
+    }
+    if (head_ref == NULL) {
+        perror("Exchange error - remove_pricelevel_from_orderbook - trying to remove pricelevel from empty Linked List");
+        exit(EXIT_FAILURE);
+    }
+    
+    // Remove 1st Pricelevel - Orderbook has only one pricelevel
+    if (*head_ref == pricelevel && pricelevel->next == NULL) {
+        PriceLevel* temp = *head_ref; 
+        *head_ref = NULL; // Update head of list - Empty linked list
+        free(temp);
+        return;
+    }
+
+    // Remove 1st Pricelevel - Orderbook has multiple pricelevels
+    if (*head_ref == pricelevel && pricelevel->next != NULL) {
+        PriceLevel* temp = *head_ref; 
+        *head_ref = (*head_ref)->next; // Update head of list
+        free(temp);
+        return;
+    }
+
+    PriceLevel* current_pricelevel = *head_ref;
+    // Remove non-first Pricelevel
+    while (current_pricelevel->next != NULL) {
+        if (current_pricelevel->next == pricelevel && current_pricelevel->next->next != NULL) {
+            // Remove middle pricelevel
+            PriceLevel* temp = current_pricelevel->next;
+            current_pricelevel->next = temp->next;
+            free(temp);
+            return;
+        } else if (current_pricelevel->next == pricelevel && current_pricelevel->next->next == NULL) {
+            // Removing last Pricelevel - set new last->next = NULL
+            PriceLevel* temp = current_pricelevel->next;
+            current_pricelevel->next = NULL;
+            free(temp);
+            return;
+        }
+        current_pricelevel = current_pricelevel->next;
+    }
+
+    perror("Exchange Error - remove_pricelevel_from_orderbook - Shouldn't reach end of function");
+    exit(EXIT_FAILURE);
+
 }
 
 void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
@@ -464,6 +556,8 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     traders[trader_id]->order_id++;
 }
 
+
+
 // ---------------- Handle Orders ---------------
 void receive_order(int trader_id) {
     // Read order info from trader pipe
@@ -491,11 +585,15 @@ void receive_order(int trader_id) {
         result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
         // Check if new order hits any existing sell orders
 
-        // Add order to buy orderbook
+        // Validate order_id
+        if (order_id != traders[trader_id]->order_id) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
         insert_buy_order(order_id, trader_id, quantity, price, product);
 
         notify_trader(trader_id, order_id, 0);
-        
+        traders[trader_id]->order_id++;
 
         notify_all_traders(trader_id, order_type, product, quantity, price);
 
@@ -505,7 +603,11 @@ void receive_order(int trader_id) {
         unsigned int price;
         result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
 
-        // Check if new order hits any existing buy orders
+        // Validate order_id
+        if (order_id != traders[trader_id]->order_id) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
 
         // Add order to sell orderbook
         insert_sell_order(order_id, trader_id, quantity, price, product);
@@ -518,26 +620,89 @@ void receive_order(int trader_id) {
     } else if (strcmp(order_type, "AMEND") == 0) {
         unsigned int quantity;
         unsigned int price;
+        result = sscanf(order_msg, "%10s %u %u %u", order_type, &order_id, &quantity, &price);
 
-        // Find order and update quantity and price of remaining units
+        // Validate order_id
+        if (order_id >= traders[trader_id]->order_id) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
+        OrderNode* order = traders[trader_id]->orders[order_id];
+        
+        // Order Filled or Cancelled
+        if (order == NULL) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
+        
+        if (price == order->pricelevel->price) {
+            // Just alter Quantity
+            order->quantity = quantity;
+        } else if (price != order->pricelevel->price) {
+            // Change order's pricelevel
+            char* temp_buy_or_sell = malloc(strlen(order->pricelevel->buy_or_sell) + 1);
+            char* temp_product = malloc(MAX_PRODUCT_LEN);
 
-        // Check if amended order hits any existing orders
+            if (temp_buy_or_sell == NULL || temp_product) {
+                perror("Error allocating memory");
+                exit(EXIT_FAILURE);
+            }
+            strcpy(temp_buy_or_sell, order->pricelevel->buy_or_sell);
+            strcpy(temp_product, order->pricelevel->orderbook->product);
+            
+            remove_order(order);
+            if (temp_buy_or_sell == "BUY") {
+                insert_buy_order(order_id, trader_id, quantity, price, temp_product);
+            } else if (temp_buy_or_sell == "SELL") {
+                insert_sell_order(order_id, trader_id, quantity, price, temp_product);
+            }
+            free(temp_buy_or_sell);
+            free(temp_product);
+            
+            // Check if amended order hits any existing orders
+            
+        }
+
+        return;
 
     } else if (strcmp(order_type, "CANCEL") == 0) {
         // Find order and remove from pricelevel/orderbook
         OrderNode* existing_order = traders[trader_id]->orders[order_id];
+        
+        // Validate order_id
+        if (order_id >= traders[trader_id]->order_id) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
+
+        // Already filled or cancelled
         if (existing_order == NULL) {
-            // Already filled or cancelled
             notify_trader(trader_id, order_id, 3);
             return;
         } 
-        
+        char* temp_buy_or_sell = malloc(strlen(existing_order->pricelevel->buy_or_sell) + 1);
+        char* temp_product = malloc(MAX_PRODUCT_LEN);
 
+        if (temp_buy_or_sell == NULL || temp_product) {
+            perror("Error allocating memory");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(temp_buy_or_sell, existing_order->pricelevel->buy_or_sell);
+        strcpy(temp_product, existing_order->pricelevel->orderbook->product);
+        
+        // Remove order from pricelevel
+        remove_order(existing_order);
+        notify_trader(trader_id, order_id, 2);
+        notify_all_traders(trader_id, temp_buy_or_sell, temp_product, 0, 0);
+
+        free(temp_buy_or_sell);
+        free(temp_product);
+        return;
     }
 
-    
-
 }
+
+
 
 // ------------------ Main ------------------
 
@@ -574,15 +739,15 @@ int main(int argc, char **argv) {
             cleanup_orders_queue(orders_queue);
         } else if (market_open == false) {
             
-        } else if (market_open == true && order == false) {
+        } else if (market_open == true && order_pending == false) {
             pause();
-        } else if (market_open == true && order == true) {
+        } else if (market_open == true && order_pending == true) {
             // Loop through dequeue & handle each order
             printf("Handle incoming order\n");
             int pid = dequeue(orders_queue);
             if (pid == -1) {
                 // All orders in queue handled
-                order = false;
+                order_pending = false;
                 continue;
             }
             // Handle order from trader with pid x

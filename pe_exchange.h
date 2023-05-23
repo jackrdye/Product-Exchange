@@ -37,8 +37,10 @@ struct OrderNode {
 
 struct PriceLevel {
     int price;
+    char buy_or_sell[5];
     OrderNode* head; // first order in price level - LinkedList of orders
     PriceLevel* next; // Next price level (lower for buys) (higher for sells)
+    OrderBook* orderbook;
 };
 
 struct OrderBook {
