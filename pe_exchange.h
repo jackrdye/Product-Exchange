@@ -8,6 +8,10 @@
 #endif
 
 typedef struct Trader Trader;
+typedef struct OrderNode OrderNode;
+typedef struct PriceLevel PriceLevel;
+typedef struct OrderBook OrderBook;
+
 struct Trader {
     int id;
     int pid;
@@ -22,9 +26,6 @@ struct Trader {
 };
 
 // ----------- OrderBook ------------
-typedef struct OrderNode OrderNode;
-typedef struct PriceLevel PriceLevel;
-typedef struct OrderBook OrderBook;
 
 struct OrderNode {
     int quantity;
