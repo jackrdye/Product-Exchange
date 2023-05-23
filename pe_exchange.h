@@ -15,6 +15,10 @@ struct Trader {
     char trader_fifo[MAX_FIFO_LENGTH];
     int exchange_fd;
     int trader_fd;
+    FILE* exchange_stream;
+    FILE* trader_stream;
+    unsigned int order_id;
+    OrderNode** orders;
 };
 
 // ----------- OrderBook ------------
@@ -27,12 +31,14 @@ struct OrderNode {
     int trader_id;
     int order_id;
     struct OrderNode* next;
+    struct OrderNode* previous;
+    PriceLevel* pricelevel;
 } ;
 
 struct PriceLevel {
     int price;
     OrderNode* head; // first order in price level - LinkedList of orders
-    PriceLevel* next; // Next price level
+    PriceLevel* next; // Next price level (lower for buys) (higher for sells)
 };
 
 struct OrderBook {

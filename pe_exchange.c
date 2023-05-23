@@ -15,6 +15,7 @@ bool trading_complete = false;
 Queue* orders_queue;
 Trader** traders;
 char** products;
+OrderBook** orderbooks;
 
 
 // ------------------------- Signals -----------------------------
@@ -116,6 +117,8 @@ Trader** create_traders(int num_traders, char **argv) {
         }
         traders[i] = new_trader;
         traders[i]->id = i; // Set trader id
+        traders[i]->order_id = 0;
+        traders[i]->orders = (OrderNode**) malloc(sizeof(OrderNode*) * CHUNK_SIZE);
         char buf[MAX_FIFO_LENGTH];
         int num_bytes;
         // Set FIFO_EXCHANGE
@@ -154,7 +157,7 @@ Trader** create_traders(int num_traders, char **argv) {
             // Parent Process
             traders[i]->pid = pid;
         }
-        
+        // Open File Descriptors
         traders[i]->trader_fd = open(traders[i]->trader_fifo, O_RDONLY | O_NONBLOCK);
         if (traders[i]->exchange_fd == -1) {
             perror("Exchange: Opening Exchange Pipe - Read Mode");
@@ -169,6 +172,13 @@ Trader** create_traders(int num_traders, char **argv) {
             exit(1);
         }
         printf("[PEX] Connected to %s\n", traders[i]->trader_fifo);
+        
+        // Open Streams
+        FILE* trader_stream = fdopen(traders[i]->trader_fd, "r");
+        if (trader_stream == NULL) {
+            perror("Trader stream not open");
+            exit(1);
+        }
     }
     return traders;
 }
@@ -178,15 +188,6 @@ Queue* create_orders_queue() {
     queue->front = NULL;
     queue->rear = NULL;
     return queue;
-}
-
-// --------------- OrderBook ------------------
-OrderBook* create_orderbook(char* product) {
-    OrderBook* orderbook = malloc(sizeof(OrderBook));
-    strncpy(orderbook->product, product, strlen(product));
-    orderbook->buys = malloc(sizeof(PriceLevel*));
-    orderbook->sells = malloc(sizeof(PriceLevel*));
-    return orderbook;
 }
 
 
@@ -254,8 +255,289 @@ void print_trader_positions() {
 
 }
 
+void error_close_exchange() {
+
+}
+
+// ----------------- Notify Traders -----------------
+void notify_all_traders(int trader_id, char * order_type, char *product, int quantity, int price) {
+    // Notify all traders except 'trader_id'
+    char buf[64]; memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf), "MARKET %s %s %u %u;", order_type, product, quantity, price);
+    for (int i = 0; i < (sizeof(traders)/sizeof(traders[0])); i++) {
+        if (i != trader_id) {
+            write(traders[i]->exchange_fd, buf, sizeof(buf));
+            signal_trader(traders[i]->pid);
+        }
+    }
+}
+
+void notify_trader(int trader_id, unsigned int order_id, int message_type) {
+    // Notify ACCEPTED, AMENDED, CANCELLED, INVALID
+    char type[15]; memset(type, 0, sizeof(type));
+    if (message_type == 0) {
+        strcpy(type, "ACCEPTED");
+    } else if (message_type == 1) {
+        strcpy(type, "AMENDED");
+    } else if (message_type == 2) {
+        strcpy(type, "CANCELLED");
+    } else if (message_type == 3) {
+        strcpy(type, "INVALID");
+        write(traders[trader_id]->exchange_fd, "INVALID;", sizeof("INVALID;"));
+        signal_trader(traders[trader_id]->pid);
+        return;
+    } else {
+        // Invalid - 
+        perror("Exchange Error - Notify Trader - Invalid message type");
+        exit(EXIT_FAILURE);
+    }
+    char buf[64]; memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf), "%s %u;", type, order_id);
+    write(traders[trader_id]->exchange_fd, buf, sizeof(buf));
+    signal_trader(traders[trader_id]->pid);
+}
+
+// --------------- OrderBook ------------------
+OrderBook* create_orderbook(char* product) {
+    OrderBook* orderbook = malloc(sizeof(OrderBook));
+    strncpy(orderbook->product, product, strlen(product));
+    orderbook->buys = malloc(sizeof(PriceLevel*));
+    orderbook->sells = malloc(sizeof(PriceLevel*));
+    return orderbook;
+}
+
+void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
+    // Find buys orderbook
+    PriceLevel* buys;
+    for (int i = 0; i < (sizeof(products)/sizeof(products[0])); i++) {
+        if (strcmp(product, orderbooks[i]->product) == 0) {
+            buys = orderbooks[i]->buys;
+        }
+    }
+    if (buys == NULL) {
+        // Invalid product
+        notify_trader(trader_id, order_id, 3);
+    }
+    
+    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
+    new_order->order_id = order_id;
+    new_order->quantity = quantity;
+    new_order->trader_id = trader_id;
+    new_order->next = NULL;
+    new_order->previous = NULL;
+
+    PriceLevel* currentlevel = buys;
+
+    // Empty Orderbook || Insert new pricelevel at head of 'buys'
+    if (currentlevel == NULL || price > currentlevel->price) {
+        PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+        new_pricelevel->price = price;
+        new_pricelevel->next = currentlevel; // NULL if empty, 1st 'buy' level if new head
+        buys = new_pricelevel;    
+    } 
+
+    // Insert Price level between two price levels || at the end.
+    else if (currentlevel != NULL) {
+        while (currentlevel != NULL) {
+            if (price == currentlevel->price) {
+                // Append to existing price level
+                OrderNode* order = currentlevel->head;
+                while (order->next != NULL) {
+                    order = order->next;
+                }
+                order->next = new_order;
+                new_order->previous = order;
+            } 
+            // Find when new_order price is greater then next price level
+            else if (currentlevel->next == NULL || price > currentlevel->next->price) {
+                PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+                new_pricelevel->price = price;
+                // insert new pricelevel
+                new_pricelevel->next = currentlevel->next; 
+                currentlevel->next = new_pricelevel;
+
+                new_pricelevel->head = new_order; // insert order into new pricelevel
+                new_order->previous = NULL;
+            }
+
+            currentlevel = currentlevel->next;
+        } 
+    }
+
+    // Check if need to increase traders orders size
+    if (traders[trader_id]->order_id % CHUNK_SIZE == 0 && traders[trader_id]->order_id != 0) {
+        OrderNode **extended_orders = realloc(traders[trader_id]->orders, (traders[trader_id]->order_id + CHUNK_SIZE) * sizeof(OrderNode *));
+
+        if (extended_orders == NULL) {
+            perror("Error: Unable to Extend Traders Orderbook - place_order()");
+            return;
+        }
+        traders[trader_id]->orders = extended_orders;
+    }
+    // Add order to trader's orders
+    traders[trader_id]->orders[order_id] = new_order;
+    
+    traders[trader_id]->order_id++;
+}
 
 
+void insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
+    // Find sells orderbook
+    PriceLevel** sellsptr;
+    for (int i = 0; i < (sizeof(products)/sizeof(products[0])); i++) {
+        if (strcmp(product, orderbooks[i]->product) == 0) {
+            sellsptr = &orderbooks[i]->sells;
+        }
+    }
+    if (*sellsptr == NULL) {
+        // Invalid product
+        notify_trader(trader_id, order_id, 3);
+    }
+
+    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
+    new_order->order_id = order_id;
+    new_order->quantity = quantity;
+    new_order->trader_id = trader_id;
+    new_order->next = NULL;
+    new_order->previous = NULL;
+
+    // Find existing pricelevel or create new one
+
+    PriceLevel* currentlevel = *sellsptr;
+
+    // Empty Orderbook || Insert new pricelevel at head of 'buys'
+    if (currentlevel == NULL || price < currentlevel->price) {
+        PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+        new_pricelevel->price = price;
+        new_pricelevel->next = currentlevel; // NULL if empty, 1st 'buy' level if new head
+        sellsptr = &new_pricelevel;
+        
+    }
+    // Insert Order in Existing Price Level || New Price level between two existing price levels || at the end.
+    currentlevel = *sellsptr;
+    while (currentlevel != NULL) {
+        if (price == currentlevel->price) {
+            // append to existing price level
+            OrderNode* order = currentlevel->head;
+            while (order->next != NULL) {
+                order = order->next;
+            }
+            order->next = new_order;
+            new_order->previous = order;
+
+            new_order->pricelevel = currentlevel;
+            break;
+        } 
+        // Find when new_order price is between next price level
+        else if (currentlevel->next == NULL || price < currentlevel->next->price) {
+            PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+            new_pricelevel->price = price;
+            // insert new pricelevel
+            new_pricelevel->next = currentlevel->next; 
+            currentlevel->next = new_pricelevel;
+
+            new_pricelevel->head = new_order; // insert order into new pricelevel
+            new_order->previous = NULL;
+
+            new_order->pricelevel = new_pricelevel;
+
+            break;
+        }
+
+        currentlevel = currentlevel->next;
+    } 
+    
+
+    // Check if need to increase traders orders size
+    if (traders[trader_id]->order_id % CHUNK_SIZE == 0 && traders[trader_id]->order_id != 0) {
+        OrderNode **extended_orders = realloc(traders[trader_id]->orders, (traders[trader_id]->order_id + CHUNK_SIZE) * sizeof(OrderNode *));
+
+        if (extended_orders == NULL) {
+            perror("Error: Unable to Extend Traders Orderbook - place_order()");
+            return;
+        }
+        traders[trader_id]->orders = extended_orders;
+    }
+    // Add order to trader's orders
+    traders[trader_id]->orders[order_id] = new_order;
+    
+    traders[trader_id]->order_id++;
+}
+
+// ---------------- Handle Orders ---------------
+void receive_order(int trader_id) {
+    // Read order info from trader pipe
+    char* order_msg[64];
+    memset(order_msg, '\0', 64);
+    if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
+        perror("Error receiving order - read from trader pipe returns NULL\n");
+    } 
+    // Validate Order
+    char order_type[11];
+    unsigned int order_id;
+    int result = sscanf(order_msg, "%10s %u", order_type, &order_id);
+    if (result != 2) {
+        // Invalid Order
+        notify_trader(trader_id, order_id, 3);
+    } else if (order_id > traders[trader_id]->order_id) {
+        // Invalid Order
+        notify_trader(trader_id, order_id, 3);
+    }
+
+    if (strcmp(order_type, "BUY") == 0) {
+        char product[16];
+        unsigned int quantity;
+        unsigned int price;
+        result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
+        // Check if new order hits any existing sell orders
+
+        // Add order to buy orderbook
+        insert_buy_order(order_id, trader_id, quantity, price, product);
+
+        notify_trader(trader_id, order_id, 0);
+        
+
+        notify_all_traders(trader_id, order_type, product, quantity, price);
+
+    } else if (strcmp(order_type, "SELL") == 0) {
+        char product[16];
+        unsigned int quantity;
+        unsigned int price;
+        result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
+
+        // Check if new order hits any existing buy orders
+
+        // Add order to sell orderbook
+        insert_sell_order(order_id, trader_id, quantity, price, product);
+
+        notify_trader(trader_id, order_id, 0);
+        traders[trader_id]->order_id++;
+
+        notify_all_traders(trader_id, order_type, product, quantity, price);
+
+    } else if (strcmp(order_type, "AMEND") == 0) {
+        unsigned int quantity;
+        unsigned int price;
+
+        // Find order and update quantity and price of remaining units
+
+        // Check if amended order hits any existing orders
+
+    } else if (strcmp(order_type, "CANCEL") == 0) {
+        // Find order and remove from pricelevel/orderbook
+        OrderNode* existing_order = traders[trader_id]->orders[order_id];
+        if (existing_order == NULL) {
+            // Already filled or cancelled
+            notify_trader(trader_id, order_id, 3);
+            return;
+        } 
+        
+
+    }
+
+    
+
+}
 
 // ------------------ Main ------------------
 
@@ -267,9 +549,11 @@ int main(int argc, char **argv) {
     // Create order book for each product
     int num_products = 0;
     products = read_products_file(&num_products);
+    orderbooks = (OrderBook**) malloc(sizeof(OrderBook*) * num_products);
     printf("[PEX] Trading %d products:", num_products);
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
+        strcpy(orderbooks[i]->product, products[i]);
     }
     printf("\n");
 
