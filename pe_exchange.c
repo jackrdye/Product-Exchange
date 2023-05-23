@@ -314,37 +314,6 @@ OrderBook* create_orderbook(char* product) {
 
 // }
 
-void remove_order(OrderNode* order) {
-    PriceLevel* pricelevel = order->pricelevel;
-    
-    // Remove 1st order - Pricelevel has only one order
-    if (pricelevel->head == order && order->next == NULL) {
-        pricelevel->head == NULL;
-        free(order); // free order
-        remove_pricelevel_from_orderbook(pricelevel); //Remove empty pricelevel
-        return;
-    } 
-    // Remove 1st order - Pricelevel has multiple orders
-    else if (pricelevel->head == order && order->next != NULL) {
-        pricelevel->head = order->next;
-        free(order);
-        return;
-    }
-
-    // Remove non-first order
-    OrderNode* current_order = pricelevel->head;
-    while (current_order != NULL) {
-        if (current_order->next == order) {
-            current_order->next = order->next;
-            OrderNode* temp = current_order->next;
-            current_order->next = temp->next;
-            free(temp);
-            return;
-        }
-        current_order = current_order->next;
-    }
-}
-
 void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
     // Identify BUY or SELL orderbook
     PriceLevel** head_ref;
@@ -397,6 +366,38 @@ void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
     exit(EXIT_FAILURE);
 
 }
+
+void remove_order(OrderNode* order) {
+    PriceLevel* pricelevel = order->pricelevel;
+    
+    // Remove 1st order - Pricelevel has only one order
+    if (pricelevel->head == order && order->next == NULL) {
+        pricelevel->head = NULL;
+        free(order); // free order
+        remove_pricelevel_from_orderbook(pricelevel); //Remove empty pricelevel
+        return;
+    } 
+    // Remove 1st order - Pricelevel has multiple orders
+    else if (pricelevel->head == order && order->next != NULL) {
+        pricelevel->head = order->next;
+        free(order);
+        return;
+    }
+
+    // Remove non-first order
+    OrderNode* current_order = pricelevel->head;
+    while (current_order != NULL) {
+        if (current_order->next == order) {
+            current_order->next = order->next;
+            OrderNode* temp = current_order->next;
+            current_order->next = temp->next;
+            free(temp);
+            return;
+        }
+        current_order = current_order->next;
+    }
+}
+
 
 void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find buys orderbook
@@ -660,7 +661,7 @@ void receive_order(int trader_id) {
             free(temp_product);
             
             // Check if amended order hits any existing orders
-            
+
         }
 
         return;
