@@ -135,7 +135,7 @@ void cleanup_traders() {
     for (int i = 0; i < num_traders; i++) {
         free(traders[i]->orders);
         fclose(traders[i]->trader_stream);
-        fclose(traders[i]->exchange_fd);
+        close(traders[i]->exchange_fd);
         unlink(traders[i]->trader_fifo);
         unlink(traders[i]->exchange_fifo);
         free(traders[i]);
