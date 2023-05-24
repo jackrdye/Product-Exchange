@@ -739,7 +739,7 @@ void receive_order(int trader_id) {
         char product[16];
         unsigned int quantity;
         unsigned int price;
-        result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
+        result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
         // Check if new order hits any existing sell orders
 
         // Validate order_id
@@ -761,7 +761,7 @@ void receive_order(int trader_id) {
         char product[16];
         unsigned int quantity;
         unsigned int price;
-        result = sscanf(order_msg, "%10s %u %10s %u %u", order_type, &order_id, product, &quantity, &price);
+        result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
 
         // Validate order_id
         if (order_id != traders[trader_id]->order_id) {
