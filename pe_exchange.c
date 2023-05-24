@@ -509,7 +509,7 @@ void remove_order(OrderNode* order) {
 }
 
 
-void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
+bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find buys orderbook
     OrderBook* orderbook;
     for (int i = 0; i < num_products; i++) {
@@ -519,10 +519,8 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     }
     if (orderbook == NULL) {
         // Invalid product
-        notify_trader(trader_id, order_id, 3);
+        return false;
     }
-    
-    
 
     PriceLevel* currentlevel = orderbook->buys;
 
@@ -593,10 +591,12 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     traders[trader_id]->orders[order_id] = new_order;
     
     traders[trader_id]->order_id++;
+
+    return true;
 }
 
 
-void insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
+bool insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find sells orderbook
     OrderBook* orderbook;
     for (int i = 0; i < num_products; i++) {
@@ -606,10 +606,8 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     }
     if (orderbook->sells == NULL) {
         // Invalid product
-        notify_trader(trader_id, order_id, 3);
+        return false;
     }
-
-
 
     PriceLevel* currentlevel = orderbook->sells;
 
@@ -682,6 +680,8 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     traders[trader_id]->orders[order_id] = new_order;
     
     traders[trader_id]->order_id++;
+
+    return true;
 }
 
 
@@ -723,7 +723,10 @@ void receive_order(int trader_id) {
             notify_trader(trader_id, order_id, 3);
             return;
         }
-        insert_buy_order(order_id, trader_id, quantity, price, product);
+        if (insert_buy_order(order_id, trader_id, quantity, price, product) == false) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
 
         notify_trader(trader_id, order_id, 0);
         traders[trader_id]->order_id++;
@@ -743,7 +746,10 @@ void receive_order(int trader_id) {
         }
 
         // Add order to sell orderbook
-        insert_sell_order(order_id, trader_id, quantity, price, product);
+        if (insert_sell_order(order_id, trader_id, quantity, price, product) == false) {
+            notify_trader(trader_id, order_id, 3);
+            return;
+        }
 
         notify_trader(trader_id, order_id, 0);
         traders[trader_id]->order_id++;
