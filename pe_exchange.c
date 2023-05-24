@@ -736,7 +736,7 @@ void receive_order(int trader_id) {
     }
 
     if (strcmp(order_type, "BUY") == 0) {
-        char product[16];
+        char product[MAX_PRODUCT_LEN];
         unsigned int quantity;
         unsigned int price;
         result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
@@ -758,7 +758,7 @@ void receive_order(int trader_id) {
         notify_all_traders(trader_id, order_type, product, quantity, price);
 
     } else if (strcmp(order_type, "SELL") == 0) {
-        char product[16];
+        char product[MAX_PRODUCT_LEN];
         unsigned int quantity;
         unsigned int price;
         result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
