@@ -198,7 +198,7 @@ Queue* create_orders_queue() {
 // ---------------- Helper Functions ---------------
 int trader_pid_to_id(int pid, Trader** traders) {
     // Currently O(n) can implement hash table to make it average constant time
-    for (int i = 0; i < (sizeof(traders)/sizeof(Trader)); i++) {
+    for (int i = 0; i < num_traders; i++) {
         if (pid == traders[i]->pid) {
             return traders[i]->id;
         }
@@ -762,6 +762,11 @@ int main(int argc, char **argv) {
             }
             // Handle order from trader with pid x
             int trader_id = trader_pid_to_id(pid, traders);
+            if (trader_id == -1) {
+                // Invalid pid
+                printf("Exchange Error - trader_pid_to_id - Invalid pid (%d), trader_id (%d)", pid, trader_id);
+                exit(EXIT_FAILURE);
+            }
             printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
         }
