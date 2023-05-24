@@ -181,6 +181,7 @@ Trader** create_traders(char **argv) {
             perror("Trader stream not open");
             exit(1);
         }
+        traders[i]->trader_stream = trader_stream;
     }
     return traders;
 }

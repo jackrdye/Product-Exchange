@@ -19,7 +19,6 @@ struct Trader {
     char trader_fifo[MAX_FIFO_LENGTH];
     int exchange_fd;
     int trader_fd;
-    FILE* exchange_stream;
     FILE* trader_stream;
     unsigned int order_id;
     OrderNode** orders;
