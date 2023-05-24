@@ -413,8 +413,8 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
 OrderBook* create_orderbook(char* product) {
     OrderBook* orderbook = malloc(sizeof(OrderBook));
     strcpy(orderbook->product, product);
-    orderbook->buys = malloc(sizeof(PriceLevel*));
-    orderbook->sells = malloc(sizeof(PriceLevel*));
+    orderbook->buys = NULL;
+    orderbook->sells = NULL;
     return orderbook;
 }
 
@@ -928,7 +928,7 @@ int main(int argc, char **argv) {
             }
             // printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
-            
+            printf("Processed order - print orderbook\n");
             print_orderbooks();
         }
 
