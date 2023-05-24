@@ -620,7 +620,7 @@ bool insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
             orderbook =  orderbooks[i];
         }
     }
-    if (orderbook->sells == NULL) {
+    if (orderbook == NULL) {
         // Invalid product
         return false;
     }
