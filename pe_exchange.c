@@ -317,7 +317,7 @@ void print_sell_orders(PriceLevel* head) {
             currentorder = currentorder->next;
         }
         temp_str = ((num_orders == 1) ? "order" : "orders");
-        snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]       SELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
+        snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]        SELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
 
         char* new_final = malloc(strlen(final_str) + strlen(temp_str) + 1);
         strcpy(new_final, temp_pricelevel);
@@ -343,19 +343,19 @@ void print_buy_orders(PriceLevel* head) {
             currentorder = currentorder->next;
         }
         str = ((num_orders == 1) ? "order" : "orders");
-        printf("[PEX]       BUY %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, str);
+        printf("[PEX]        BUY %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, str);
         currentlevel = currentlevel->next;
     }
 }
 
 void print_orderbooks() {
     // Loop Products
-    printf("[PEX]   --ORDERBOOK--\n");
+    printf("[PEX]    --ORDERBOOK--\n");
     for (int i = 0; i < num_products; i++) {
         OrderBook* book = orderbooks[i];
         int num_buys = calc_num_levels(book->buys);
         int num_sells = calc_num_levels(book->sells);
-        printf("[PEX]   Product: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
+        printf("[PEX]    Product: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
         print_sell_orders(book->sells);
         print_buy_orders(book->buys);
     }
@@ -511,67 +511,81 @@ void remove_order(OrderNode* order) {
 
 void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find buys orderbook
-    PriceLevel* buys;
+    OrderBook* orderbook;
     for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
-            buys = orderbooks[i]->buys;
+            orderbook = orderbooks[i];
         }
     }
-    if (buys == NULL) {
+    if (orderbook == NULL) {
         // Invalid product
         notify_trader(trader_id, order_id, 3);
     }
     
-    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
-    new_order->order_id = order_id;
-    new_order->quantity = quantity;
-    new_order->trader_id = trader_id;
-    new_order->next = NULL;
+    
 
-    PriceLevel* currentlevel = buys;
+    PriceLevel* currentlevel = orderbook->buys;
 
     // Empty Orderbook || Insert new pricelevel at head of 'buys'
     if (currentlevel == NULL || price > currentlevel->price) {
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
-        strcpy(new_pricelevel->buy_or_sell, "BUY");
         new_pricelevel->price = price;
-        new_pricelevel->next = NULL; // NULL if empty, 1st 'buy' level if new head
-        buys = new_pricelevel;    
+        strcpy(new_pricelevel->buy_or_sell, "BUY");
+        new_pricelevel->next = (currentlevel == NULL) ? NULL : currentlevel; // NULL if empty, 1st 'buy' level if new head
+        new_pricelevel->orderbook = orderbook;
+
+        orderbook->buys = new_pricelevel;    
     } 
 
-    // Insert Order at end of existing pricelevel || at start of new pricelevel
-    else if (currentlevel != NULL) {
-        while (currentlevel != NULL) {
-            if (price == currentlevel->price) {
-                // Append to existing price level
-                OrderNode* order = currentlevel->head;
-                while (order->next != NULL) {
-                    order = order->next;
-                }
-                order->next = new_order;
-            } 
-            // Find when new_order price is greater then next price level
-            else if (currentlevel->next == NULL || price > currentlevel->next->price) {
-                PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
-                new_pricelevel->price = price;
-                // insert new pricelevel
-                new_pricelevel->next = currentlevel->next; 
-                currentlevel->next = new_pricelevel;
+    // Create new order template
+    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
+    new_order->quantity = quantity;
+    new_order->trader_id = trader_id;
+    new_order->order_id = order_id;
+    new_order->next = NULL;
 
-                new_pricelevel->head = new_order; // insert order into new pricelevel
+    // at end of existing pricelevel || at start of new pricelevel
+    // Insert Order 
+    currentlevel = orderbook->buys;
+    while (currentlevel != NULL) {
+        // Append to existing price level
+        if (price == currentlevel->price) {
+            OrderNode* order = currentlevel->head;
+            while (order->next != NULL) {
+                order = order->next;
             }
+            new_order->pricelevel = currentlevel;
 
-            currentlevel = currentlevel->next;
+            order->next = new_order; //Append order
+            break;
         } 
-    }
+        // Find when new_order price is greater then next price level
+        else if (currentlevel->next == NULL || price > currentlevel->next->price) {
+            PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+            new_pricelevel->price = price;
+            strcpy(new_pricelevel->buy_or_sell, "BUY");
+
+            new_pricelevel->next = currentlevel->next; // insert new pricelevel
+            currentlevel->next = new_pricelevel; // insert new pricelevel
+            new_pricelevel->orderbook = orderbook;
+
+            new_order->pricelevel = new_pricelevel;
+            new_pricelevel->head = new_order; // insert order at head of new pricelevel
+            
+            break;
+        }
+
+        currentlevel = currentlevel->next;
+    } 
+    
 
     // Check if need to increase traders orders size
     if (traders[trader_id]->order_id % CHUNK_SIZE == 0 && traders[trader_id]->order_id != 0) {
         OrderNode **extended_orders = realloc(traders[trader_id]->orders, (traders[trader_id]->order_id + CHUNK_SIZE) * sizeof(OrderNode *));
 
         if (extended_orders == NULL) {
-            perror("Error: Unable to Extend Traders Orderbook - place_order()");
-            return;
+            printf("Error: Unable to Extend Traders Orderbook - place_order()");
+            exit(EXIT_FAILURE);
         }
         traders[trader_id]->orders = extended_orders;
     }
@@ -584,60 +598,68 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
 
 void insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find sells orderbook
-    PriceLevel** sellsptr;
+    OrderBook* orderbook;
     for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
-            sellsptr = &orderbooks[i]->sells;
+            orderbook =  orderbooks[i];
         }
     }
-    if (*sellsptr == NULL) {
+    if (orderbook->sells == NULL) {
         // Invalid product
         notify_trader(trader_id, order_id, 3);
     }
 
-    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
-    new_order->order_id = order_id;
-    new_order->quantity = quantity;
-    new_order->trader_id = trader_id;
-    new_order->next = NULL;
 
-    // Find existing pricelevel or create new one
 
-    PriceLevel* currentlevel = *sellsptr;
+    PriceLevel* currentlevel = orderbook->sells;
 
-    // Empty Orderbook || Insert new pricelevel at head of 'buys'
+    // Create new pricelevel at head of sells - Empty Orderbook || Lower price than existing head
     if (currentlevel == NULL || price < currentlevel->price) {
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
         new_pricelevel->price = price;
-        new_pricelevel->next = currentlevel; // NULL if empty, 1st 'buy' level if new head
-        sellsptr = &new_pricelevel;
+        strcpy(new_pricelevel->buy_or_sell, "SELL");
+        new_pricelevel->head = NULL;
+        new_pricelevel->next = (currentlevel == NULL) ? NULL : currentlevel; // NULL if empty || previous head
+        new_pricelevel->orderbook = orderbook;
         
+        orderbook->sells = new_pricelevel;
     }
-    // Insert Order in Existing Price Level || New Price level between two existing price levels || at the end.
-    currentlevel = *sellsptr;
+
+    // Create new order template
+    OrderNode* new_order = (OrderNode*) malloc(sizeof(OrderNode));
+    new_order->quantity = quantity;
+    new_order->trader_id = trader_id;
+    new_order->order_id = order_id;
+    new_order->next = NULL;
+
+    // in Existing Price Level || New Price level between two existing price levels || at the end.
+    // Insert Order 
+    currentlevel = orderbook->sells;
     while (currentlevel != NULL) {
+        // Append order to existing price level
         if (price == currentlevel->price) {
-            // append to existing price level
             OrderNode* order = currentlevel->head;
+            // Set order to last order in linked list
             while (order->next != NULL) {
                 order = order->next;
             }
-            order->next = new_order;
-
             new_order->pricelevel = currentlevel;
+
+            order->next = new_order; // Append order
             break;
         } 
-        // Find when new_order price is between next price level
+        // Create new pricelevel - between two existing or at end (No exact pricelevel match)
         else if (currentlevel->next == NULL || price < currentlevel->next->price) {
             PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
             new_pricelevel->price = price;
-            // insert new pricelevel
-            new_pricelevel->next = currentlevel->next; 
-            currentlevel->next = new_pricelevel;
+            strcpy(new_pricelevel->buy_or_sell, "SELL");
+            
+            new_pricelevel->next = currentlevel->next; // insert new pricelevel
+            currentlevel->next = new_pricelevel; // insert new pricelevel
+            new_pricelevel->orderbook = orderbook;
 
-            new_pricelevel->head = new_order; // insert order into new pricelevel
-
-            new_order->pricelevel = new_pricelevel;
+            new_order->pricelevel = new_pricelevel; 
+            new_pricelevel->head = new_order; // insert order at head of new pricelevel
 
             break;
         }
@@ -651,8 +673,8 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
         OrderNode **extended_orders = realloc(traders[trader_id]->orders, (traders[trader_id]->order_id + CHUNK_SIZE) * sizeof(OrderNode *));
 
         if (extended_orders == NULL) {
-            perror("Error: Unable to Extend Traders Orderbook - place_order()");
-            return;
+            printf("Error: Unable to Extend Traders Orderbook - place_order()");
+            exit(EXIT_FAILURE);
         }
         traders[trader_id]->orders = extended_orders;
     }
