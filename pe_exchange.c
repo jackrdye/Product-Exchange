@@ -289,7 +289,6 @@ char** read_products_file(int *size) {
 
 int calc_num_levels(PriceLevel* head) {
     PriceLevel* currentlevel = head;
-    printf("Inside - Head ptr %p, next ptr %p\n", head, head->next);
     int i = 0;
     while (currentlevel != NULL) {
         i++;
