@@ -176,12 +176,12 @@ Trader** create_traders(char **argv) {
         printf("[PEX] Connected to %s\n", traders[i]->trader_fifo);
         
         // Open Streams
-        FILE* trader_stream = fdopen(traders[i]->trader_fd, "r");
-        if (trader_stream == NULL) {
+        traders[i]->trader_stream = fdopen(traders[i]->trader_fd, "r");
+        if (traders[i]->trader_stream == NULL) {
             perror("Trader stream not open");
             exit(1);
         }
-        traders[i]->trader_stream = trader_stream;
+        
     }
     return traders;
 }
