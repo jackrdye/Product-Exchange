@@ -307,7 +307,7 @@ void print_sell_orders(PriceLevel* head) {
     while (currentlevel != NULL) {
         int total_quantity;
         int num_orders = 0;
-        char temp_str;
+        char* temp_str;
         char temp_pricelevel[128];
         // Sum Pricelevels order quantities
         OrderNode* currentorder = currentlevel->head;
@@ -334,7 +334,7 @@ void print_buy_orders(PriceLevel* head) {
     while (currentlevel != NULL) {
         int total_quantity;
         int num_orders = 0;
-        char str;
+        char* str;
         // Sum Pricelevels order quantities
         OrderNode* currentorder = currentlevel->head;
         while (currentorder != NULL) {
