@@ -91,6 +91,7 @@ void cleanup_orders_queue(Queue* queue) {
 void cleanup_orderbooks() {
     // Loop each orderbook
     for (int i = 0; i < num_products; i++) {
+        printf("Cleanup %s orderbook\n", orderbooks[i]->product);
         for (int i = 0; i < 2; i++) {
             PriceLevel* currentlevel;
             // Set starting pricelevel - Buys or Sells
