@@ -38,7 +38,7 @@ void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext
     int trader_id = trader_pid_to_id(info->si_pid);
     printf("[PEX] Trader %d disconnected", trader_id);
     num_disconected_traders ++;
-    if (num_disconected_traders == (sizeof(traders)/sizeof(Trader))) {
+    if (num_disconected_traders == num_traders) {
         trading_complete = true;
     }
 }
@@ -88,7 +88,7 @@ void cleanup_orders_queue(Queue* queue) {
     }
 }
 
-void cleanup_orderbook() {
+void cleanup_orderbooks() {
     // Loop Products
         // Loop PriceLevels
                 // Loop each OrderNode
@@ -99,6 +99,11 @@ void cleanup_orderbook() {
 
 void cleanup_products() {
     // free products list
+    for(int i = 0; i < num_products; i ++) {
+        free(products[i]);
+    }
+    free(products);
+    return;
 }
 
 void cleanup_traders() {
@@ -748,8 +753,12 @@ int main(int argc, char **argv) {
     }
     market_open = true;
     while (1) {
-        if (terminate == true) {
+        if (terminate == true || trading_complete == true) {
             cleanup_orders_queue(orders_queue);
+            cleanup_orderbooks();
+            cleanup_products();
+            cleanup_traders();
+            printf("[PEX] Trading completed\n");
         } else if (market_open == false) {
             
         } else if (market_open == true && order_pending == false) {
@@ -769,7 +778,7 @@ int main(int argc, char **argv) {
                 printf("Exchange Error - trader_pid_to_id - Invalid pid (%d), trader_id (%d)", pid, trader_id);
                 exit(EXIT_FAILURE);
             }
-            printf("Handle incoming order from trader %d\n", trader_id);
+            // printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
         }
 
