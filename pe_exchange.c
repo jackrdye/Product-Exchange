@@ -327,7 +327,6 @@ void print_sell_orders(PriceLevel* head) {
         strcat(new_final, final_str);
         free(final_str);
         final_str = new_final;
-        printf("---------------------TEST------------ (%s)", temp_pricelevel);
         currentlevel = currentlevel->next;
     }
     printf("%s", final_str);
