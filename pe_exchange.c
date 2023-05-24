@@ -644,12 +644,24 @@ bool insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     while (currentlevel != NULL) {
         // Append order to existing price level
         if (price == currentlevel->price) {
+            new_order->pricelevel = currentlevel;
+
             OrderNode* order = currentlevel->head;
             // Set order to last order in linked list
+            if (order == NULL) {
+                // Empty Pricelevel - insert 1st order
+                currentlevel->head = new_order;
+            } else if (order != NULL) {
+                // Multiple Orders - Append to end
+                while (order->next != NULL) {
+                    order = order->next;
+                }
+                order->next = new_order; // Append order
+            }
+            
             while (order->next != NULL) {
                 order = order->next;
             }
-            new_order->pricelevel = currentlevel;
 
             order->next = new_order; // Append order
             break;
