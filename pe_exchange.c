@@ -325,10 +325,13 @@ void print_sell_orders(PriceLevel* head) {
         char* new_final = malloc(strlen(final_str) + strlen(temp_str) + 1);
         strcpy(new_final, temp_pricelevel);
         strcat(new_final, final_str);
+        free(final_str);
         final_str = new_final;
+        
         currentlevel = currentlevel->next;
     }
     printf("%s", final_str);
+    free(final_str);
     
 }
 
