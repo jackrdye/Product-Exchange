@@ -353,6 +353,7 @@ void print_orderbooks() {
     printf("[PEX]\t--ORDERBOOK--\n");
     for (int i = 0; i < num_products; i++) {
         OrderBook* book = orderbooks[i];
+        printf("Calculate num_buys at %p\n", book->buys);
         int num_buys = calc_num_levels(book->buys);
         int num_sells = calc_num_levels(book->sells);
         printf("[PEX]\tProduct: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
@@ -526,7 +527,9 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
 
     // Empty Orderbook || Insert new pricelevel at head of 'buys'
     if (currentlevel == NULL || price > currentlevel->price) {
+        printf("Create new pricelevel at head.\n");
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+        printf("Pricelevel allocated at %p\n", new_pricelevel);
         new_pricelevel->price = price;
         strcpy(new_pricelevel->buy_or_sell, "BUY");
         new_pricelevel->head = NULL;
