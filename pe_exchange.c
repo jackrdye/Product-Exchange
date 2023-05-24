@@ -302,7 +302,7 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
 // --------------- OrderBook ------------------
 OrderBook* create_orderbook(char* product) {
     OrderBook* orderbook = malloc(sizeof(OrderBook));
-    strncpy(orderbook->product, product, strlen(product));
+    strcpy(orderbook->product, product);
     orderbook->buys = malloc(sizeof(PriceLevel*));
     orderbook->sells = malloc(sizeof(PriceLevel*));
     return orderbook;
@@ -721,7 +721,8 @@ int main(int argc, char **argv) {
     printf("[PEX] Trading %d products:", num_products);
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
-        strcpy(orderbooks[i]->product, products[i]);
+        orderbooks[i] = create_orderbook(products[i]);
+        // strcpy(orderbooks[i]->product, products[i]);
     }
     printf("\n");
 
