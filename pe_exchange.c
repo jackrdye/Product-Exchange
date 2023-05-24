@@ -426,12 +426,13 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     // Empty Orderbook || Insert new pricelevel at head of 'buys'
     if (currentlevel == NULL || price > currentlevel->price) {
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
+        strcpy(new_pricelevel->buy_or_sell, "BUY");
         new_pricelevel->price = price;
-        new_pricelevel->next = currentlevel; // NULL if empty, 1st 'buy' level if new head
+        new_pricelevel->next = NULL; // NULL if empty, 1st 'buy' level if new head
         buys = new_pricelevel;    
     } 
 
-    // Insert Price level between two price levels || at the end.
+    // Insert Order at end of existing pricelevel || at start of new pricelevel
     else if (currentlevel != NULL) {
         while (currentlevel != NULL) {
             if (price == currentlevel->price) {
@@ -569,6 +570,8 @@ void receive_order(int trader_id) {
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
         perror("Error receiving order - read from trader pipe returns NULL\n");
     } 
+    // Ouput parsing order
+    printf("[PEX] [T%d] Parsing command: <%s>", trader_id, order_msg);
     // Validate Order
     char order_type[11];
     unsigned int order_id;
@@ -757,10 +760,7 @@ int main(int argc, char **argv) {
             }
             // Handle order from trader with pid x
             int trader_id = trader_pid_to_id(pid, traders);
-            if (trader_id) {
-
-            }
-
+            receive_order(trader_id);
         }
 
 
