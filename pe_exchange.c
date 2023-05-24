@@ -327,7 +327,7 @@ void print_sell_orders(PriceLevel* head) {
         strcat(new_final, final_str);
         free(final_str);
         final_str = new_final;
-        
+
         currentlevel = currentlevel->next;
     }
     printf("%s", final_str);
@@ -359,7 +359,7 @@ void print_orderbooks() {
     printf("[PEX]\t--ORDERBOOK--\n");
     for (int i = 0; i < num_products; i++) {
         OrderBook* book = orderbooks[i];
-        printf("Calculate num_buys at %p\n", book->buys);
+        // printf("Calculate num_buys at %p\n", book->buys);
         int num_buys = calc_num_levels(book->buys);
         int num_sells = calc_num_levels(book->sells);
         printf("[PEX]\tProduct: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
@@ -405,7 +405,7 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
         return;
     } else {
         // Invalid - 
-        perror("Exchange Error -Notify Trader - Invalid message type");
+        printf("Exchange Error -Notify Trader - Invalid message type");
         exit(EXIT_FAILURE);
     }
     char buf[64]; memset(buf, 0, sizeof(buf));
@@ -535,7 +535,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     if (currentlevel == NULL || price > currentlevel->price) {
         printf("Create new pricelevel at head.\n");
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
-        printf("Pricelevel allocated at %p\n", new_pricelevel);
+        // printf("Pricelevel allocated at %p\n", new_pricelevel);
         new_pricelevel->price = price;
         strcpy(new_pricelevel->buy_or_sell, "BUY");
         new_pricelevel->head = NULL;
@@ -607,7 +607,6 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     // Add order to trader's orders
     traders[trader_id]->orders[order_id] = new_order;
     
-    traders[trader_id]->order_id++;
 
     return true;
 }
@@ -668,11 +667,6 @@ bool insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
                 order->next = new_order; // Append order
             }
             
-            while (order->next != NULL) {
-                order = order->next;
-            }
-
-            order->next = new_order; // Append order
             break;
         } 
         // Create new pricelevel - between two existing or at end (No exact pricelevel match)
@@ -708,8 +702,7 @@ bool insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     // Add order to trader's orders
     traders[trader_id]->orders[order_id] = new_order;
     
-    traders[trader_id]->order_id++;
-
+    
     return true;
 }
 
