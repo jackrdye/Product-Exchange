@@ -517,14 +517,16 @@ void remove_order(OrderNode* order) {
 
 bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find buys orderbook
-    OrderBook* orderbook;
+    OrderBook* orderbook = NULL;
     for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
             orderbook = orderbooks[i];
+            printf("Insert Order - Found %s's orderbook\n", product);
         }
     }
     if (orderbook == NULL) {
         // Invalid product
+        printf("Insert Order - Couldn't find %s's orderbook\n", product);
         return false;
     }
 
@@ -614,7 +616,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
 
 bool insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find sells orderbook
-    OrderBook* orderbook;
+    OrderBook* orderbook = NULL;
     for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
             orderbook =  orderbooks[i];
