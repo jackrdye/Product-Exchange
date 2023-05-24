@@ -311,7 +311,7 @@ void print_sell_orders(PriceLevel* head) {
         int total_quantity = 0;
         int num_orders = 0;
         char* temp_str;
-        char temp_pricelevel[64];
+        char temp_pricelevel[64]; memset(temp_pricelevel, 0, sizeof(temp_pricelevel));
         // Sum Pricelevels order quantities
         OrderNode* currentorder = currentlevel->head;
         while(currentorder != NULL) {
@@ -525,6 +525,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     }
     if (orderbook == NULL) {
         // Invalid product
+        printf("Orderbook -> product = (%s)", orderbook->product);
         return false;
     }
 
