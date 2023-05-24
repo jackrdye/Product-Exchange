@@ -382,7 +382,7 @@ void notify_all_traders(int trader_id, char * order_type, char *product, int qua
     snprintf(buf, sizeof(buf), "MARKET %s %s %u %u;", order_type, product, quantity, price);
     for (int i = 0; i < num_traders; i++) {
         if (i != trader_id) {
-            write(traders[i]->exchange_fd, buf, sizeof(buf));
+            write(traders[i]->exchange_fd, buf, strlen(buf));
             signal_trader(traders[i]->pid);
         }
     }
