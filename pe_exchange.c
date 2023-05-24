@@ -319,9 +319,9 @@ OrderBook* create_orderbook(char* product) {
 void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
     // Identify BUY or SELL orderbook
     PriceLevel** head_ref;
-    if (pricelevel->buy_or_sell == "BUY") {
+    if (strcmp(pricelevel->buy_or_sell, "BUY") == 0) {
         head_ref = &pricelevel->orderbook->buys;
-    } else if (pricelevel->buy_or_sell == "SELL") {
+    } else if (strcmp(pricelevel->buy_or_sell, "SELL") == 0) {
         head_ref = &pricelevel->orderbook->sells;
     }
     if (head_ref == NULL) {
@@ -564,7 +564,7 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
 // ---------------- Handle Orders ---------------
 void receive_order(int trader_id) {
     // Read order info from trader pipe
-    char* order_msg[64];
+    char order_msg[64];
     memset(order_msg, 0, sizeof(order_msg));
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
         perror("Error receiving order - read from trader pipe returns NULL\n");
