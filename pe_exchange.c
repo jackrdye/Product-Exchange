@@ -5,7 +5,7 @@
  */
 
 #include "pe_exchange.h"
-int trader_pid_to_id(int pid, Trader** traders);
+int trader_pid_to_id(int pid);
 
 bool market_open = false;
 bool order_pending = false;
@@ -35,7 +35,7 @@ void terminate_handler(int signal_number) {
 
 void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext) {
     // Trader Disconnected
-    int trader_id = trader_pid_to_id(info->si_pid, traders);
+    int trader_id = trader_pid_to_id(info->si_pid);
     printf("[PEX] Trader %d disconnected", trader_id);
     num_disconected_traders ++;
     if (num_disconected_traders == (sizeof(traders)/sizeof(Trader))) {
@@ -196,7 +196,7 @@ Queue* create_orders_queue() {
 
 
 // ---------------- Helper Functions ---------------
-int trader_pid_to_id(int pid, Trader** traders) {
+int trader_pid_to_id(int pid) {
     // Currently O(n) can implement hash table to make it average constant time
     for (int i = 0; i < num_traders; i++) {
         if (pid == traders[i]->pid) {
@@ -575,7 +575,9 @@ void receive_order(int trader_id) {
         exit(EXIT_FAILURE);
     } 
     // Ouput parsing order
-    printf("[PEX] [T%d] Parsing command: <%s>", trader_id, order_msg);
+    printf("Hi\n");
+    printf("[PEX] [T%d] Parsing command: <%s>\n", trader_id, order_msg);
+    printf("Bye\n");
     // Validate Order
     char order_type[11];
     unsigned int order_id;
@@ -762,7 +764,7 @@ int main(int argc, char **argv) {
                 continue;
             }
             // Handle order from trader with pid x
-            int trader_id = trader_pid_to_id(pid, traders);
+            int trader_id = trader_pid_to_id(pid);
             if (trader_id == -1) {
                 // Invalid pid
                 printf("Exchange Error - trader_pid_to_id - Invalid pid (%d), trader_id (%d)", pid, trader_id);
