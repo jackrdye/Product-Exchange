@@ -399,7 +399,7 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
         strcpy(type, "CANCELLED");
     } else if (message_type == 3) {
         strcpy(type, "INVALID");
-        write(traders[trader_id]->exchange_fd, "INVALID;", sizeof("INVALID;"));
+        write(traders[trader_id]->exchange_fd, "INVALID;", strlen("INVALID;"));
         signal_trader(traders[trader_id]->pid);
         return;
     } else {
