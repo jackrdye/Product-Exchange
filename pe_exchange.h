@@ -31,7 +31,6 @@ struct OrderNode {
     int trader_id;
     int order_id;
     struct OrderNode* next;
-    struct OrderNode* previous;
     PriceLevel* pricelevel;
 } ;
 

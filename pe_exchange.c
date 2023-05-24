@@ -36,7 +36,7 @@ void terminate_handler(int signal_number) {
 void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext) {
     // Trader Disconnected
     int trader_id = trader_pid_to_id(info->si_pid);
-    printf("[PEX] Trader %d disconnected", trader_id);
+    printf("[PEX] Trader %d disconnected\n", trader_id);
     num_disconected_traders ++;
     if (num_disconected_traders == num_traders) {
         trading_complete = true;
@@ -89,12 +89,34 @@ void cleanup_orders_queue(Queue* queue) {
 }
 
 void cleanup_orderbooks() {
-    // Loop Products
-        // Loop PriceLevels
-                // Loop each OrderNode
-                    // Free each OrderNode
-            // Free each PriceLevel
-        // Free each product
+    // Loop each orderbook
+    for (int i = 0; i < num_products; i++) {
+        for (int i = 0; i < 2; i++) {
+            PriceLevel* currentlevel;
+            // Set starting pricelevel - Buys or Sells
+            if (i == 0) {
+                currentlevel = orderbooks[i]->buys; 
+            } else if (i == 1) {
+                currentlevel = orderbooks[i]->sells;
+            }
+            // Free pricelevels
+            while (currentlevel != NULL) {
+                // Free orders in pricelevel
+                OrderNode* currentorder = currentlevel->head;
+                while (currentorder != NULL) {
+                    OrderNode* nextorder = currentorder->next;
+                    free(currentorder); // free order
+                    currentorder = nextorder;
+                }
+
+                // Move to next pricelevel
+                PriceLevel* nextlevel = currentlevel->next;
+                free(currentlevel); // free pricelevel
+                currentlevel = nextlevel;
+            }
+        }
+        free(orderbooks[i]); // free orderbook
+    }
 }
 
 void cleanup_products() {
@@ -110,6 +132,15 @@ void cleanup_traders() {
     // close fifos
     // Unlink fifos
     // free traders**
+    for (int i = 0; i < num_traders; i++) {
+        free(traders[i]->orders);
+        fclose(traders[i]->trader_stream);
+        fclose(traders[i]->exchange_fd);
+        unlink(traders[i]->trader_fifo);
+        unlink(traders[i]->exchange_fifo);
+        free(traders[i]);
+    }
+    free(traders);
 }
 
 
@@ -371,7 +402,7 @@ void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
         current_pricelevel = current_pricelevel->next;
     }
 
-    perror("Exchange Error - remove_pricelevel_from_orderbook - Shouldn't reach end of function");
+    printf("Exchange Error - remove_pricelevel_from_orderbook - Shouldn't reach end of function");
     exit(EXIT_FAILURE);
 
 }
@@ -426,7 +457,6 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     new_order->quantity = quantity;
     new_order->trader_id = trader_id;
     new_order->next = NULL;
-    new_order->previous = NULL;
 
     PriceLevel* currentlevel = buys;
 
@@ -449,7 +479,6 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
                     order = order->next;
                 }
                 order->next = new_order;
-                new_order->previous = order;
             } 
             // Find when new_order price is greater then next price level
             else if (currentlevel->next == NULL || price > currentlevel->next->price) {
@@ -460,7 +489,6 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
                 currentlevel->next = new_pricelevel;
 
                 new_pricelevel->head = new_order; // insert order into new pricelevel
-                new_order->previous = NULL;
             }
 
             currentlevel = currentlevel->next;
@@ -502,7 +530,6 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     new_order->quantity = quantity;
     new_order->trader_id = trader_id;
     new_order->next = NULL;
-    new_order->previous = NULL;
 
     // Find existing pricelevel or create new one
 
@@ -526,7 +553,6 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
                 order = order->next;
             }
             order->next = new_order;
-            new_order->previous = order;
 
             new_order->pricelevel = currentlevel;
             break;
@@ -540,7 +566,6 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
             currentlevel->next = new_pricelevel;
 
             new_pricelevel->head = new_order; // insert order into new pricelevel
-            new_order->previous = NULL;
 
             new_order->pricelevel = new_pricelevel;
 
@@ -759,6 +784,7 @@ int main(int argc, char **argv) {
             cleanup_products();
             cleanup_traders();
             printf("[PEX] Trading completed\n");
+            exit(EXIT_SUCCESS);
         } else if (market_open == false) {
             
         } else if (market_open == true && order_pending == false) {
