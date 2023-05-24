@@ -92,13 +92,13 @@ void cleanup_orderbooks() {
     // Loop each orderbook
     for (int i = 0; i < num_products; i++) {
         printf("Cleanup %s orderbook\n", orderbooks[i]->product);
-        for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
             PriceLevel* currentlevel;
             // Set starting pricelevel - Buys or Sells
-            if (i == 0) {
+            if (j == 0) {
                 printf("buys-starting pricelevel located at %p\n", orderbooks[i]->buys);
                 currentlevel = orderbooks[i]->buys; 
-            } else if (i == 1) {
+            } else if (j == 1) {
                 printf("sells-starting pricelevel located at %p\n", orderbooks[i]->sells);
                 currentlevel = orderbooks[i]->sells;
             }
@@ -884,7 +884,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
         orderbooks[i] = create_orderbook(products[i]);
-        // strcpy(orderbooks[i]->product, products[i]);
     }
     printf("\n");
 
