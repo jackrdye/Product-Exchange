@@ -576,6 +576,7 @@ void receive_order(int trader_id) {
     } 
     // Ouput parsing order
     printf("Hi\n");
+    order_msg[strlen(order_msg) - 1] = '\0';
     printf("[PEX] [T%d] Parsing command: <%s>\n", trader_id, order_msg);
     printf("Bye\n");
     // Validate Order
