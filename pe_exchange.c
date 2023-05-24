@@ -529,6 +529,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
         new_pricelevel->price = price;
         strcpy(new_pricelevel->buy_or_sell, "BUY");
+        new_pricelevel->head = NULL;
         new_pricelevel->next = (currentlevel == NULL) ? NULL : currentlevel; // NULL if empty, 1st 'buy' level if new head
         new_pricelevel->orderbook = orderbook;
 
