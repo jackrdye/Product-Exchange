@@ -181,7 +181,7 @@ Trader** create_traders(char **argv) {
             perror("Trader stream not open");
             exit(1);
         }
-        printf("Opened Trader stream %d at %p\n", i, traders[i]->trader_stream);
+        // printf("Opened Trader stream %d at %p\n", i, traders[i]->trader_stream);
 
     }
     return traders;
@@ -569,16 +569,14 @@ void receive_order(int trader_id) {
     // Read order info from trader pipe
     char order_msg[64];
     memset(order_msg, 0, sizeof(order_msg));
-    printf("Reading from trader stream %d at %p\n", trader_id, traders[trader_id]->trader_stream);
+    // printf("Reading from trader stream %d at %p\n", trader_id, traders[trader_id]->trader_stream);
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
         printf("Error receiving order - read from trader pipe returns NULL\n");
         exit(EXIT_FAILURE);
     } 
     // Ouput parsing order
-    printf("Hi\n");
     order_msg[strlen(order_msg) - 1] = '\0';
     printf("[PEX] [T%d] Parsing command: <%s>\n", trader_id, order_msg);
-    printf("Bye\n");
     // Validate Order
     char order_type[11];
     unsigned int order_id;
