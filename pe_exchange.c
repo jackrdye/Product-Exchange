@@ -317,7 +317,7 @@ void print_sell_orders(PriceLevel* head) {
             currentorder = currentorder->next;
         }
         temp_str = ((num_orders == 1) ? "order" : "orders");
-        snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]        SELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
+        snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]\t\tSELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
 
         char* new_final = malloc(strlen(final_str) + strlen(temp_str) + 1);
         strcpy(new_final, temp_pricelevel);
@@ -343,19 +343,19 @@ void print_buy_orders(PriceLevel* head) {
             currentorder = currentorder->next;
         }
         str = ((num_orders == 1) ? "order" : "orders");
-        printf("[PEX]        BUY %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, str);
+        printf("[PEX]\t\tBUY %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, str);
         currentlevel = currentlevel->next;
     }
 }
 
 void print_orderbooks() {
     // Loop Products
-    printf("[PEX]    --ORDERBOOK--\n");
+    printf("[PEX]\t--ORDERBOOK--\n");
     for (int i = 0; i < num_products; i++) {
         OrderBook* book = orderbooks[i];
         int num_buys = calc_num_levels(book->buys);
         int num_sells = calc_num_levels(book->sells);
-        printf("[PEX]    Product: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
+        printf("[PEX]\tProduct: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
         print_sell_orders(book->sells);
         print_buy_orders(book->buys);
     }
