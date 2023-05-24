@@ -525,10 +525,10 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     }
     if (orderbook == NULL) {
         // Invalid product
-        printf("Orderbook -> product = (%s)", orderbook->product);
         return false;
     }
 
+    printf("Orderbook -> product = (%s)", orderbook->product);
     PriceLevel* currentlevel = orderbook->buys;
 
     // Empty Orderbook || Insert new pricelevel at head of 'buys'
