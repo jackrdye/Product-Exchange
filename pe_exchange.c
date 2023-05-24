@@ -308,7 +308,7 @@ void print_sell_orders(PriceLevel* head) {
     
     PriceLevel* currentlevel = head;
     while (currentlevel != NULL) {
-        int total_quantity;
+        int total_quantity = 0;
         int num_orders = 0;
         char* temp_str;
         char temp_pricelevel[128];
@@ -327,7 +327,7 @@ void print_sell_orders(PriceLevel* head) {
         strcat(new_final, final_str);
         free(final_str);
         final_str = new_final;
-
+        printf("---------------------TEST------------ (%s)", temp_pricelevel);
         currentlevel = currentlevel->next;
     }
     printf("%s", final_str);
