@@ -11,9 +11,11 @@ bool market_open = false;
 bool order_pending = false;
 bool terminate = false;
 int num_disconected_traders;
+int num_traders;
 bool trading_complete = false;
 Queue* orders_queue;
 Trader** traders;
+int num_products;
 char** products;
 OrderBook** orderbooks;
 
@@ -107,7 +109,7 @@ void cleanup_traders() {
 
 
 // ---------------- Setup Functions ------------------
-Trader** create_traders(int num_traders, char **argv) {
+Trader** create_traders(char **argv) {
     traders = (Trader**) malloc((num_traders) * sizeof(Trader*));
     for (int i = 0; i < num_traders; i++) {
         Trader* new_trader = (Trader*) malloc(sizeof(Trader));
@@ -264,7 +266,7 @@ void notify_all_traders(int trader_id, char * order_type, char *product, int qua
     // Notify all traders except 'trader_id'
     char buf[64]; memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "MARKET %s %s %u %u;", order_type, product, quantity, price);
-    for (int i = 0; i < (sizeof(traders)/sizeof(traders[0])); i++) {
+    for (int i = 0; i < num_traders; i++) {
         if (i != trader_id) {
             write(traders[i]->exchange_fd, buf, sizeof(buf));
             signal_trader(traders[i]->pid);
@@ -402,7 +404,7 @@ void remove_order(OrderNode* order) {
 void insert_buy_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find buys orderbook
     PriceLevel* buys;
-    for (int i = 0; i < (sizeof(products)/sizeof(products[0])); i++) {
+    for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
             buys = orderbooks[i]->buys;
         }
@@ -477,7 +479,7 @@ void insert_buy_order(int order_id, int trader_id, int quantity, int price, char
 void insert_sell_order(int order_id, int trader_id, int quantity, int price, char* product) {
     // Find sells orderbook
     PriceLevel** sellsptr;
-    for (int i = 0; i < (sizeof(products)/sizeof(products[0])); i++) {
+    for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
             sellsptr = &orderbooks[i]->sells;
         }
@@ -563,7 +565,7 @@ void insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
 void receive_order(int trader_id) {
     // Read order info from trader pipe
     char* order_msg[64];
-    memset(order_msg, '\0', 64);
+    memset(order_msg, 0, sizeof(order_msg));
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
         perror("Error receiving order - read from trader pipe returns NULL\n");
     } 
@@ -713,7 +715,7 @@ int main(int argc, char **argv) {
     orders_queue = create_orders_queue();
 
     // Create order book for each product
-    int num_products = 0;
+    num_products = 0;
     products = read_products_file(&num_products);
     orderbooks = (OrderBook**) malloc(sizeof(OrderBook*) * num_products);
     printf("[PEX] Trading %d products:", num_products);
@@ -724,7 +726,8 @@ int main(int argc, char **argv) {
     printf("\n");
 
     // Create traders from command line
-    traders = create_traders(argc-2, argv); // Launch Traders, Open FIFO
+    num_traders = argc-2;
+    traders = create_traders(argv); // Launch Traders, Open FIFO
     
     // Register signal handlers
     register_signals();
