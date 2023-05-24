@@ -548,13 +548,20 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     while (currentlevel != NULL) {
         // Append to existing price level
         if (price == currentlevel->price) {
-            OrderNode* order = currentlevel->head;
-            while (order->next != NULL) {
-                order = order->next;
-            }
-            new_order->pricelevel = currentlevel;
+            new_order->pricelevel = currentlevel; 
 
-            order->next = new_order; //Append order
+            OrderNode* order = currentlevel->head;
+            if (order == NULL) {
+                // Empty Pricelevel - insert 1st order
+                currentlevel->head = new_order;
+            } else if (order != NULL) {
+                // Multiple Orders - Append to end
+                while (order->next != NULL) {
+                    order = order->next;
+                }
+                order->next = new_order; //Append order
+            }
+
             break;
         } 
         // Find when new_order price is greater then next price level
