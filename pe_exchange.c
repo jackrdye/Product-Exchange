@@ -654,9 +654,9 @@ void receive_order(int trader_id) {
             strcpy(temp_product, order->pricelevel->orderbook->product);
             
             remove_order(order);
-            if (temp_buy_or_sell == "BUY") {
+            if (strcmp(temp_buy_or_sell, "BUY") == 0) {
                 insert_buy_order(order_id, trader_id, quantity, price, temp_product);
-            } else if (temp_buy_or_sell == "SELL") {
+            } else if (strcmp(temp_buy_or_sell, "SELL") == 0) {
                 insert_sell_order(order_id, trader_id, quantity, price, temp_product);
             }
             free(temp_buy_or_sell);
