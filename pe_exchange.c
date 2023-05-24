@@ -409,7 +409,7 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
     }
     char buf[64]; memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "%s %u;", type, order_id);
-    write(traders[trader_id]->exchange_fd, buf, sizeof(buf));
+    write(traders[trader_id]->exchange_fd, buf, strlen(buf));
     signal_trader(traders[trader_id]->pid);
 }
 
