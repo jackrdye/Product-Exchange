@@ -311,7 +311,7 @@ void print_sell_orders(PriceLevel* head) {
         int total_quantity = 0;
         int num_orders = 0;
         char* temp_str;
-        char temp_pricelevel[128];
+        char temp_pricelevel[64];
         // Sum Pricelevels order quantities
         OrderNode* currentorder = currentlevel->head;
         while(currentorder != NULL) {
@@ -322,7 +322,7 @@ void print_sell_orders(PriceLevel* head) {
         temp_str = ((num_orders == 1) ? "order" : "orders");
         snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]\t\tSELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
 
-        char* new_final = malloc(strlen(final_str) + strlen(temp_str) + 1);
+        char* new_final = malloc(strlen(final_str) + strlen(temp_pricelevel) + 1);
         strcpy(new_final, temp_pricelevel);
         strcat(new_final, final_str);
         free(final_str);
