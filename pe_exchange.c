@@ -757,6 +757,9 @@ void receive_order(int trader_id) {
 
         notify_all_traders(trader_id, order_type, product, quantity, price);
 
+        printf("Inserted Buy order - print orderbook\n");
+        print_orderbooks();
+
     } else if (strcmp(order_type, "SELL") == 0) {
         char product[MAX_PRODUCT_LEN];
         unsigned int quantity;
@@ -779,6 +782,9 @@ void receive_order(int trader_id) {
         traders[trader_id]->order_id++;
 
         notify_all_traders(trader_id, order_type, product, quantity, price);
+
+        printf("Inserted Sell order - print orderbook\n");
+        print_orderbooks();
 
     } else if (strcmp(order_type, "AMEND") == 0) {
         unsigned int quantity;
@@ -823,9 +829,10 @@ void receive_order(int trader_id) {
             free(temp_product);
             
             // Check if amended order hits any existing orders
-
         }
 
+        printf("Amended order - print orderbook\n");
+        print_orderbooks();
         return;
 
     } else if (strcmp(order_type, "CANCEL") == 0) {
@@ -860,6 +867,10 @@ void receive_order(int trader_id) {
 
         free(temp_buy_or_sell);
         free(temp_product);
+        
+        printf("Cancelled order - print orderbook\n");
+        print_orderbooks();
+        
         return;
     }
 
@@ -927,8 +938,7 @@ int main(int argc, char **argv) {
             }
             // printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
-            printf("Processed order - print orderbook\n");
-            print_orderbooks();
+            
         }
 
 
