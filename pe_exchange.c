@@ -181,7 +181,8 @@ Trader** create_traders(char **argv) {
             perror("Trader stream not open");
             exit(1);
         }
-        
+        printf("Opened Trader stream %d at %p\n", i, traders[i]->trader_stream);
+
     }
     return traders;
 }
@@ -568,6 +569,7 @@ void receive_order(int trader_id) {
     // Read order info from trader pipe
     char order_msg[64];
     memset(order_msg, 0, sizeof(order_msg));
+    printf("Reading from trader stream %d at %p\n", trader_id, traders[trader_id]->trader_stream);
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
         perror("Error receiving order - read from trader pipe returns NULL\n");
     } 
