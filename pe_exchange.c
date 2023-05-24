@@ -730,9 +730,11 @@ void receive_order(int trader_id) {
     if (result != 2) {
         // Invalid Order
         notify_trader(trader_id, order_id, 3);
+        return;
     } else if (order_id > traders[trader_id]->order_id) {
         // Invalid Order
         notify_trader(trader_id, order_id, 3);
+        return;
     }
 
     if (strcmp(order_type, "BUY") == 0) {
