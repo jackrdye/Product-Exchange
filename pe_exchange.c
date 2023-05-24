@@ -287,8 +287,76 @@ char** read_products_file(int *size) {
     return products;
 }
 
-void print_orderbook() {
+void print_orderbooks() {
+    // Loop Products
+    printf("[PEX]   --ORDERBOOK--\n");
+    for (int i = 0; i < num_products; i++) {
+        OrderBook* book = orderbooks[i];
+        int num_buys = calc_num_levels(book->buys);
+        int num_sells = calc_num_levels(book->sells);
+        printf("[PEX]   Product: %s; Buy levels: %d; Sell levels: %d\n", book->product, num_buys, num_sells);
+        print_sell_orders(book->sells);
+        print_buy_orders(book->buys);
+    }
+}
 
+int calc_num_levels(PriceLevel* head) {
+    PriceLevel* currentlevel = head;
+    int i = 0;
+    while (currentlevel != NULL) {
+        i++;
+        currentlevel = currentlevel->next;
+    }
+    return i;
+}
+
+void print_sell_orders(PriceLevel* head) {
+    char* final_str = malloc(1);
+    final_str[0] = '\0';
+    
+    PriceLevel* currentlevel = head;
+    while (currentlevel != NULL) {
+        int total_quantity;
+        int num_orders = 0;
+        char temp_str;
+        char temp_pricelevel[128];
+        // Sum Pricelevels order quantities
+        OrderNode* currentorder = currentlevel->head;
+        while(currentorder != NULL) {
+            total_quantity += currentorder->quantity;
+            num_orders++;
+            currentorder = currentorder->next;
+        }
+        temp_str = ((num_orders == 1) ? "order" : "orders");
+        snprintf(temp_pricelevel, sizeof(temp_pricelevel), "[PEX]       SELL %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, temp_str);
+
+        char* new_final = malloc(strlen(final_str) + strlen(temp_str) + 1);
+        strcpy(new_final, temp_pricelevel);
+        strcat(new_final, final_str);
+        final_str = new_final;
+        currentlevel = currentlevel->next;
+    }
+    printf("%s", final_str);
+    
+}
+
+void print_buy_orders(PriceLevel* head) {
+    PriceLevel* currentlevel = head;
+    while (currentlevel != NULL) {
+        int total_quantity;
+        int num_orders = 0;
+        char str;
+        // Sum Pricelevels order quantities
+        OrderNode* currentorder = currentlevel->head;
+        while (currentorder != NULL) {
+            total_quantity += currentorder->quantity;
+            num_orders++;
+            currentorder = currentorder->next;
+        }
+        str = ((num_orders == 1) ? "order" : "orders");
+        printf("[PEX]       BUY %d @ $%d (%d %s)\n", total_quantity, currentlevel->price, num_orders, str);
+        currentlevel = currentlevel->next;
+    }
 }
 
 void print_trader_positions() {
@@ -806,6 +874,8 @@ int main(int argc, char **argv) {
             }
             // printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
+            
+            print_orderbooks();
         }
 
 
