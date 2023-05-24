@@ -96,8 +96,10 @@ void cleanup_orderbooks() {
             PriceLevel* currentlevel;
             // Set starting pricelevel - Buys or Sells
             if (i == 0) {
+                printf("buys-starting pricelevel located at %p\n", orderbooks[i]->buys);
                 currentlevel = orderbooks[i]->buys; 
             } else if (i == 1) {
+                printf("sells-starting pricelevel located at %p\n", orderbooks[i]->sells);
                 currentlevel = orderbooks[i]->sells;
             }
             // Free pricelevels
