@@ -571,7 +571,8 @@ void receive_order(int trader_id) {
     memset(order_msg, 0, sizeof(order_msg));
     printf("Reading from trader stream %d at %p\n", trader_id, traders[trader_id]->trader_stream);
     if (fgets(order_msg, sizeof(order_msg), traders[trader_id]->trader_stream) == NULL) {
-        perror("Error receiving order - read from trader pipe returns NULL\n");
+        printf("Error receiving order - read from trader pipe returns NULL\n");
+        exit(EXIT_FAILURE);
     } 
     // Ouput parsing order
     printf("[PEX] [T%d] Parsing command: <%s>", trader_id, order_msg);
