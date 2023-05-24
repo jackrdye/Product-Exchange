@@ -754,7 +754,6 @@ int main(int argc, char **argv) {
             pause();
         } else if (market_open == true && order_pending == true) {
             // Loop through dequeue & handle each order
-            printf("Handle incoming order\n");
             int pid = dequeue(orders_queue);
             if (pid == -1) {
                 // All orders in queue handled
@@ -763,6 +762,7 @@ int main(int argc, char **argv) {
             }
             // Handle order from trader with pid x
             int trader_id = trader_pid_to_id(pid, traders);
+            printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
         }
 
