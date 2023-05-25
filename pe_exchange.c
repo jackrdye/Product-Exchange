@@ -739,7 +739,7 @@ void update_positions(Position* buyer_position, Position* seller_position, unsig
         seller_position->balance += value;
         seller_position->quantity -= quantity;
 
-    } else if (strcmpy(pays_fee, "SELLER") == 0) {
+    } else if (strcmp(pays_fee, "SELLER") == 0) {
         // Update Buyers positions
         buyer_position->balance -= value;
         buyer_position->quantity += quantity;
