@@ -11,6 +11,14 @@ typedef struct Trader Trader;
 typedef struct OrderNode OrderNode;
 typedef struct PriceLevel PriceLevel;
 typedef struct OrderBook OrderBook;
+typedef struct Position Position;
+
+struct Position {
+    char product[MAX_PRODUCT_LEN];
+    unsigned int quantity;
+    int cost;
+};
+
 
 struct Trader {
     int id;
@@ -22,6 +30,7 @@ struct Trader {
     FILE* trader_stream;
     unsigned int order_id;
     OrderNode** orders;
+    Position** positions;
 };
 
 // ----------- OrderBook ------------
@@ -44,6 +53,7 @@ struct PriceLevel {
 
 struct OrderBook {
     char product[MAX_PRODUCT_LEN];
+    unsigned int product_num;
     PriceLevel* buys; // LinkedList - Head is highest PriceLevel
     PriceLevel* sells; // LinkedList - Head is lowest PriceLevel 
 

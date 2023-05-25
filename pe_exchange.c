@@ -131,12 +131,20 @@ void cleanup_products() {
     return;
 }
 
+void cleanup_positions(Position** positions) {
+    for (int i = 0; i < num_products; i++) {
+        free(positions[i]);
+    }
+    free(positions);
+}
+
 void cleanup_traders() {
     // close fifos
     // Unlink fifos
     // free traders**
     for (int i = 0; i < num_traders; i++) {
         free(traders[i]->orders);
+        cleanup_positions(traders[i]->positions);
         fclose(traders[i]->trader_stream);
         close(traders[i]->exchange_fd);
         unlink(traders[i]->trader_fifo);
@@ -148,8 +156,20 @@ void cleanup_traders() {
 
 
 // ---------------- Setup Functions ------------------
+Position** create_starting_positions() {
+    Position** positions = (Position**) malloc(sizeof(Position*) * num_products);
+    for (int i = 0; i < num_products; i++) {
+        positions[i] = (Position*) malloc(sizeof(Position));
+        strcpy(positions[i]->product, products[i]);
+        positions[i]->balance = 0;
+        positions[i]->quantity = 0;
+    }
+    return positions;
+}
+
 Trader** create_traders(char **argv) {
     traders = (Trader**) malloc((num_traders) * sizeof(Trader*));
+
     for (int i = 0; i < num_traders; i++) {
         Trader* new_trader = (Trader*) malloc(sizeof(Trader));
         if (new_trader == NULL) {
@@ -160,6 +180,7 @@ Trader** create_traders(char **argv) {
         traders[i]->id = i; // Set trader id
         traders[i]->order_id = 0;
         traders[i]->orders = (OrderNode**) malloc(sizeof(OrderNode*) * CHUNK_SIZE);
+        traders[i]->positions = create_starting_positions();
         char buf[MAX_FIFO_LENGTH];
         int num_bytes;
         // Set FIFO_EXCHANGE
@@ -414,11 +435,12 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
 }
 
 // --------------- OrderBook ------------------
-OrderBook* create_orderbook(char* product) {
+OrderBook* create_orderbook(char* product, unsigned int product_num) {
     OrderBook* orderbook = malloc(sizeof(OrderBook));
     strcpy(orderbook->product, product);
     orderbook->buys = NULL;
     orderbook->sells = NULL;
+    orderbook->product_num = product_num;
     return orderbook;
 }
 
@@ -708,7 +730,166 @@ bool insert_sell_order(int order_id, int trader_id, int quantity, int price, cha
     return true;
 }
 
+void update_positions(Position* buyer_position, Position* seller_position, unsigned int quantity, unsigned int value, unsigned int fee, char* pays_fee) {
+    if (strcmp(pays_fee, "BUYER") == 0) {
+        // Update Buyers positions
+        buyer_position->balance -= (value + fee);
+        buyer_position->quantity += quantity;
+        // Update Sellers positions
+        seller_position->balance += value;
+        seller_position->quantity -= quantity;
 
+    } else if (strcmpy(pays_fee, "SELLER") == 0) {
+        // Update Buyers positions
+        buyer_position->balance -= value;
+        buyer_position->quantity += quantity;
+        // Update Sellers positions
+        seller_position->balance += (value + fee);
+        seller_position->quantity -= quantity;
+
+    } else {
+        printf("Exchange Error - update_position - Declare buyer or seller pays fee\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void match_buy_order(OrderNode* order) {
+    PriceLevel* sell_level = order->pricelevel->orderbook->sells;
+    while (sell_level != NULL && order->pricelevel->price >= sell_level->price && order->quantity > 0) {
+        
+        OrderNode* sell_order = sell_level->head;
+        while (sell_order != NULL && order->quantity > 0) {
+            // Match Order sell_order & order
+            if (order->quantity > sell_order->quantity) {
+                // Remaining units in new order - Remove existing order
+                unsigned int purchase_quantity = sell_order->quantity;
+                unsigned int value = purchase_quantity * sell_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[sell_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
+
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                OrderNode* temp = sell_order->next;
+                remove_order(sell_order);
+                sell_order = temp;
+
+
+            } else if (order->quantity < sell_order->quantity) {
+                // Remaining units in existing order - Remove new order
+                unsigned int purchase_quantity = order->quantity;
+                sell_order->quantity -= order->quantity;
+                unsigned int value = purchase_quantity * sell_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[sell_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
+                
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                remove_order(order); // new order fully filled
+                return;
+
+            } else if (order->quantity == sell_order->quantity) {
+                // Both orders fully filled - Remove both orders
+                unsigned int purchase_quantity = sell_order->quantity;
+                unsigned int value = purchase_quantity * sell_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[sell_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
+
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                OrderNode* temp = sell_order->next;
+                remove_order(sell_order);
+                sell_order = temp;
+
+
+                remove_order(order); // new order fully filled
+                return;
+
+            }
+
+
+        }
+        sell_level = sell_level->next;
+    }
+    
+}
+
+
+void match_sell_order(OrderNode* order) {
+    PriceLevel* buy_level = order->pricelevel->orderbook->buys;
+    while (buy_level != NULL && order->pricelevel->price <= buy_level->price && order->quantity > 0) {
+        
+        OrderNode* buy_order = buy_level->head;
+        while (buy_order != NULL && order->quantity > 0) {
+            // Match Order buy_order & order
+            if (order->quantity > buy_order->quantity) {
+                // Remaining units in new order - Remove existing order
+                unsigned int purchase_quantity = buy_order->quantity;
+                unsigned int value = purchase_quantity * buy_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
+
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", buy_order->order_id, buy_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                OrderNode* temp = buy_order->next;
+                remove_order(buy_order);
+                buy_order = temp;
+
+
+            } else if (order->quantity < buy_order->quantity) {
+                // Remaining units in existing order - Remove new order
+                unsigned int purchase_quantity = order->quantity;
+                buy_order->quantity -= order->quantity;
+                unsigned int value = purchase_quantity * buy_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
+                
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", buy_order->order_id, buy_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                remove_order(order); // new order fully filled
+                return;
+
+            } else if (order->quantity == buy_order->quantity) {
+                // Both orders fully filled - Remove both orders
+                unsigned int purchase_quantity = buy_order->quantity;
+                unsigned int value = purchase_quantity * buy_order->pricelevel->price;
+                unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
+                order->quantity -= purchase_quantity;
+                
+                unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
+                update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
+
+                printf("[PEX] MATCH: Order %u [T%u], New Order %u [T%u], value: $%u, fee: $%u.", buy_order->order_id, buy_order->trader_id, order->order_id, order->trader_id, value, fee);
+
+                OrderNode* temp = buy_order->next;
+                remove_order(buy_order);
+                buy_order = temp;
+
+
+                remove_order(order); // new order fully filled
+                return;
+
+            }
+
+
+        }
+        buy_level = buy_level->next;
+    }
+}
 
 // ---------------- Handle Orders ---------------
 void receive_order(int trader_id) {
@@ -816,7 +997,8 @@ void receive_order(int trader_id) {
 
             if (temp_buy_or_sell == NULL || temp_product == NULL) {
                 perror("Error allocating memory");
-                exit(EXIT_FAILURE);
+                terminate = true;
+                return;
             }
             strcpy(temp_buy_or_sell, order->pricelevel->buy_or_sell);
             strcpy(temp_product, order->pricelevel->orderbook->product);
@@ -855,9 +1037,11 @@ void receive_order(int trader_id) {
         char* temp_buy_or_sell = malloc(strlen(existing_order->pricelevel->buy_or_sell) + 1);
         char* temp_product = malloc(MAX_PRODUCT_LEN);
 
-        if (temp_buy_or_sell == NULL || temp_product) {
+        if (temp_buy_or_sell == NULL || temp_product == NULL) {
             perror("Error allocating memory");
-            exit(EXIT_FAILURE);
+            terminate = true;
+            // exit(EXIT_FAILURE);
+            return;
         }
         strcpy(temp_buy_or_sell, existing_order->pricelevel->buy_or_sell);
         strcpy(temp_product, existing_order->pricelevel->orderbook->product);
@@ -894,7 +1078,7 @@ int main(int argc, char **argv) {
     printf("[PEX] Trading %d products:", num_products);
     for (int i = 0; i < num_products; i++) {
         printf(" %s", products[i]);
-        orderbooks[i] = create_orderbook(products[i]);
+        orderbooks[i] = create_orderbook(products[i], i);
     }
     printf("\n");
 
@@ -917,8 +1101,12 @@ int main(int argc, char **argv) {
             cleanup_orderbooks();
             cleanup_products();
             cleanup_traders();
-            printf("[PEX] Trading completed\n");
-            exit(EXIT_SUCCESS);
+            if (trading_complete) {
+                printf("[PEX] Trading completed\n");
+                exit(EXIT_SUCCESS);
+            } else if (terminate) {
+                exit(EXIT_FAILURE);
+            }
         } else if (market_open == false) {
             
         } else if (market_open == true && order_pending == false) {
@@ -936,7 +1124,9 @@ int main(int argc, char **argv) {
             if (trader_id == -1) {
                 // Invalid pid
                 printf("Exchange Error - trader_pid_to_id - Invalid pid (%d), trader_id (%d)", pid, trader_id);
-                exit(EXIT_FAILURE);
+                terminate = true;
+                // exit(EXIT_FAILURE);
+                continue;
             }
             // printf("Handle incoming order from trader %d\n", trader_id);
             receive_order(trader_id);
