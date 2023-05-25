@@ -27,15 +27,15 @@ struct Trader {
 // ----------- OrderBook ------------
 
 struct OrderNode {
-    int quantity;
-    int trader_id;
-    int order_id;
+    unsigned int quantity:20;
+    unsigned int order_id:20;
     struct OrderNode* next;
     PriceLevel* pricelevel;
+    unsigned int trader_id;
 } ;
 
 struct PriceLevel {
-    int price;
+    unsigned int price:20;
     char buy_or_sell[5];
     OrderNode* head; // first order in price level - LinkedList of orders
     PriceLevel* next; // Next price level (lower for buys) (higher for sells)

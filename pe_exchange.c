@@ -814,7 +814,7 @@ void receive_order(int trader_id) {
             char* temp_buy_or_sell = malloc(strlen(order->pricelevel->buy_or_sell) + 1);
             char* temp_product = malloc(MAX_PRODUCT_LEN);
 
-            if (temp_buy_or_sell == NULL || temp_product) {
+            if (temp_buy_or_sell == NULL || temp_product == NULL) {
                 perror("Error allocating memory");
                 exit(EXIT_FAILURE);
             }
