@@ -19,7 +19,7 @@
 #define FIFO_TRADER "/tmp/pe_trader_%d"
 #define FEE_PERCENTAGE 1
 #define MAX_FIFO_LENGTH 32
-#define CHUNK_SIZE 500 // Number of Order Pointers in each Chunck
+#define CHUNK_SIZE 10 // Number of Order Pointers in each Chunck
 #define MAX_MESSAGE_LEN 64
 #define MAX_PRODUCT_LEN 17
 
