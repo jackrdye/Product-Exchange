@@ -602,7 +602,7 @@ void match_buy_order(OrderNode* order) {
                 
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[order->trader_id]->positions[temp_product_num], traders[sell_order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
 
                 printf("[PEX] Match: Order %u [T%u], New Order %u [T%u], value: $%llu, fee: $%llu.\n", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
 
@@ -629,7 +629,7 @@ void match_buy_order(OrderNode* order) {
                 
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[order->trader_id]->positions[temp_product_num], traders[sell_order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
                 
                 printf("[PEX] Match: Order %u [T%u], New Order %u [T%u], value: $%llu, fee: $%llu.\n", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
 
@@ -647,7 +647,7 @@ void match_buy_order(OrderNode* order) {
                 
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[order->trader_id]->positions[temp_product_num], traders[sell_order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "BUYER");
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", sell_level->price, purchase_quantity, value, fee);
 
                 printf("[PEX] Match: Order %u [T%u], New Order %u [T%u], value: $%llu, fee: $%llu.\n", sell_order->order_id, sell_order->trader_id, order->order_id, order->trader_id, value, fee);
 
@@ -680,7 +680,7 @@ void match_sell_order(OrderNode* order) {
                 unsigned long long value = (unsigned long long)purchase_quantity * (unsigned long long)buy_order->pricelevel->price;
                 unsigned long long fee = (unsigned long long)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
                 
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
@@ -711,7 +711,7 @@ void match_sell_order(OrderNode* order) {
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
                 
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
 
                 printf("[PEX] Match: Order %u [T%u], New Order %u [T%u], value: $%llu, fee: $%llu.\n", buy_order->order_id, buy_order->trader_id, order->order_id, order->trader_id, value, fee);
 
@@ -730,7 +730,7 @@ void match_sell_order(OrderNode* order) {
                 unsigned int temp_product_num = order->pricelevel->orderbook->product_num;
                 update_positions(traders[buy_order->trader_id]->positions[temp_product_num], traders[order->trader_id]->positions[temp_product_num], purchase_quantity, value, fee, "SELLER");
                 
-                printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
+                // printf("Price %u, quantity %u, value %llu, fee %llu\n", buy_level->price, purchase_quantity, value, fee);
 
                 printf("[PEX] Match: Order %u [T%u], New Order %u [T%u], value: $%llu, fee: $%llu.\n", buy_order->order_id, buy_order->trader_id, order->order_id, order->trader_id, value, fee);
                 
@@ -1118,7 +1118,7 @@ void receive_order(int trader_id) {
         free(temp_buy_or_sell);
         free(temp_product);
         
-        printf("Cancelled order - print orderbook\n");
+        // printf("Cancelled order - print orderbook\n");
         print_orderbooks();
         print_traders_positions();
         
