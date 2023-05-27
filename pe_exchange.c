@@ -656,6 +656,7 @@ void match_sell_order(OrderNode* order) {
         OrderNode* buy_order = buy_level->head;
         while (buy_order != NULL && order->quantity > 0) {
             // Match Order buy_order & order
+            printf("Buy Level price %d, order quantity %d\n", buy_level->price, buy_order->quantity);
             if (order->quantity > buy_order->quantity) {
                 // Remaining units in new order - Remove existing order
                 unsigned int purchase_quantity = buy_order->quantity;
