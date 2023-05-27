@@ -286,7 +286,7 @@ char** read_products_file(int *size) {
     }
 
     while (fgets(product, MAX_PRODUCT_LEN, file) != NULL) {
-        if (strcmp(product, "\n")) {
+        if (strcmp(product, "\n") == 0) {
             continue;
         }
         if (i % 20 == 0) {
