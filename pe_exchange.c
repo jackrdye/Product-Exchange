@@ -391,7 +391,7 @@ void print_orderbooks() {
 void print_traders_positions() {
     printf("[PEX\t--POSITIONS--]\n");
     for (int i = 0; i < num_traders; i++) {
-        printf("[PEX]\tTrader %d: ");
+        printf("[PEX]\tTrader %d: ", i);
         for (int j = 0; j < num_products; j++) {
             Position* position = traders[i]->positions[j];
             if (j != num_products-1) {
