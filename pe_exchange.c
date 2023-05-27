@@ -565,7 +565,7 @@ void remove_order(OrderNode* order) {
 void update_positions(Position* buyer_position, Position* seller_position, unsigned int quantity, unsigned long long value, unsigned long long fee, char* pays_fee) {
     if (strcmp(pays_fee, "BUYER") == 0) {
         // Update Buyers positions
-        buyer_position->balance -= (value - fee);
+        buyer_position->balance = buyer_position->balance - value - fee;
         buyer_position->quantity += quantity;
         // Update Sellers positions
         seller_position->balance += value;
@@ -576,7 +576,7 @@ void update_positions(Position* buyer_position, Position* seller_position, unsig
         buyer_position->balance -= value;
         buyer_position->quantity += quantity;
         // Update Sellers positions
-        seller_position->balance += (value - fee);
+        seller_position->balance = buyer_position->balance + value - fee;
         seller_position->quantity -= quantity;
 
     } else {
