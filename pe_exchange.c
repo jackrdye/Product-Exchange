@@ -526,7 +526,7 @@ void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
 
 void remove_order(OrderNode* order) {
     PriceLevel* pricelevel = order->pricelevel;
-    traders[order->trader_id]->orders[order->order_id] == NULL; // Set order as no longer exists 
+    traders[order->trader_id]->orders[order->order_id] = NULL; // Set order as no longer exists 
     
     // Remove 1st order - Pricelevel has only one order
     if (pricelevel->head == order && order->next == NULL) {
