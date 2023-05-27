@@ -39,6 +39,7 @@ void child_terminates_handler(int signal_number, siginfo_t *info, void *ucontext
     int trader_id = trader_pid_to_id(info->si_pid);
     printf("[PEX] Trader %d disconnected\n", trader_id);
     num_disconected_traders ++;
+    traders[trader_id]->connected = false;
     if (num_disconected_traders == num_traders) {
         trading_complete = true;
     }
@@ -178,6 +179,7 @@ Trader** create_traders(char **argv) {
             exit(EXIT_FAILURE);
         }
         traders[i] = new_trader;
+        traders[i]->connected = true;
         traders[i]->id = i; // Set trader id
         traders[i]->order_id = 0;
         traders[i]->orders = (OrderNode**) malloc(sizeof(OrderNode*) * CHUNK_SIZE);
@@ -286,9 +288,9 @@ char** read_products_file(int *size) {
     }
 
     while (fgets(product, MAX_PRODUCT_LEN, file) != NULL) {
-        // if (strcmp(product, "\n") == 0) {
-        //     continue;
-        // }
+        if (strcmp(product, "\n") == 0) {
+            continue;
+        }
         if (i % 20 == 0) {
             // Extend products array (every 20 products)
             chunks += 1;
@@ -418,7 +420,7 @@ void notify_all_traders(int trader_id, char * order_type, char *product, int qua
     char buf[64]; memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "MARKET %s %s %u %u;", order_type, product, quantity, price);
     for (int i = 0; i < num_traders; i++) {
-        if (i != trader_id) {
+        if (i != trader_id && traders[i]->connected == true) {
             write(traders[i]->exchange_fd, buf, strlen(buf));
             signal_trader(traders[i]->pid);
         }
@@ -428,6 +430,9 @@ void notify_all_traders(int trader_id, char * order_type, char *product, int qua
 // Notify 0-ACCEPTED, 1-AMENDED, 2-CANCELLED, 3-INVALID
 void notify_trader(int trader_id, unsigned int order_id, int message_type) {
     char type[15]; memset(type, 0, sizeof(type));
+    if (traders[trader_id]->connected == false) {
+        return;
+    } 
     if (message_type == 0) {
         strcpy(type, "ACCEPTED");
     } else if (message_type == 1) {
@@ -453,15 +458,19 @@ void notify_trader(int trader_id, unsigned int order_id, int message_type) {
 void notify_traders_of_fill(int trader_id1, int order_id1, int trader_id2, int order_id2, int quantity) {
     char buf[64]; memset(buf, 0, sizeof(buf));
     // Trader1
-    snprintf(buf, sizeof(buf), "FILL %u %u;", order_id1, quantity);
-    write(traders[trader_id1]->exchange_fd, buf, strlen(buf));
-    signal_trader(traders[trader_id1]->pid);
+    if (traders[trader_id1]->connected == true) {
+        snprintf(buf, sizeof(buf), "FILL %u %u;", order_id1, quantity);
+        write(traders[trader_id1]->exchange_fd, buf, strlen(buf));
+        signal_trader(traders[trader_id1]->pid);
+    }
 
     // Trader2
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "FILL %u %u;", order_id2, quantity);
-    write(traders[trader_id2]->exchange_fd, buf, strlen(buf));
-    signal_trader(traders[trader_id2]->pid);
+    if (traders[trader_id2]->connected == true) {
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), "FILL %u %u;", order_id2, quantity);
+        write(traders[trader_id2]->exchange_fd, buf, strlen(buf));
+        signal_trader(traders[trader_id2]->pid);
+    }
 }
 
 // --------------- OrderBook ------------------

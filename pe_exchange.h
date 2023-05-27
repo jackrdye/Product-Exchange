@@ -23,6 +23,7 @@ struct Position {
 struct Trader {
     int id;
     int pid;
+    bool connected;
     char exchange_fifo[MAX_FIFO_LENGTH];
     char trader_fifo[MAX_FIFO_LENGTH];
     int exchange_fd;
