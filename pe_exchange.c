@@ -388,10 +388,18 @@ void print_orderbooks() {
     }
 }
 
-void print_trader_positions() {
+void print_traders_positions() {
+    printf("[PEX\t--POSITIONS--]\n");
     for (int i = 0; i < num_traders; i++) {
-        
-
+        printf("[PEX]\tTrader %d: ");
+        for (int j = 0; j < num_products; j++) {
+            Position* position = traders[i]->positions[j];
+            if (j != num_products-1) {
+                printf("%s %d ($%d), ", position->product, position->quantity, position->balance);
+            } else {
+                printf("%s %d ($%d)", position->product, position->quantity, position->balance);
+            }
+        }
     }
 }
 
@@ -973,6 +981,7 @@ void receive_order(int trader_id) {
 
         // printf("Inserted Buy order - print orderbook\n");
         print_orderbooks();
+        print_traders_positions();
 
     } else if (strcmp(order_type, "SELL") == 0) {
         char product[MAX_PRODUCT_LEN];
@@ -1000,6 +1009,7 @@ void receive_order(int trader_id) {
 
         // printf("Inserted Sell order - print orderbook\n");
         print_orderbooks();
+        print_traders_positions();
 
     } else if (strcmp(order_type, "AMEND") == 0) {
         unsigned int quantity;
@@ -1041,7 +1051,7 @@ void receive_order(int trader_id) {
                 notify_trader(trader_id, order_id, 1);
                 notify_all_traders(trader_id, temp_buy_or_sell, temp_product, quantity, price);
                 match_buy_order(traders[trader_id]->orders[order_id]);
-                
+
             } else if (strcmp(temp_buy_or_sell, "SELL") == 0) {
                 insert_sell_order(order_id, trader_id, quantity, price, temp_product);
                 notify_trader(trader_id, order_id, 1);
@@ -1060,6 +1070,7 @@ void receive_order(int trader_id) {
 
         // printf("Amended order - print orderbook\n");
         print_orderbooks();
+        print_traders_positions();
         return;
 
     } else if (strcmp(order_type, "CANCEL") == 0) {
@@ -1099,6 +1110,7 @@ void receive_order(int trader_id) {
         
         printf("Cancelled order - print orderbook\n");
         print_orderbooks();
+        print_traders_positions();
         
         return;
     }
