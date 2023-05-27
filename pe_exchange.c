@@ -949,9 +949,9 @@ void receive_order(int trader_id) {
     char order_type[11];
     unsigned int order_id;
     int result = sscanf(order_msg, "%10s %u", order_type, &order_id);
-    if (result != 2) {
+    if (result != 2 || order_id > traders[trader_id]->order_id) {
         // Invalid Order
-        notify_trader(trader_id, order_id, 3 || order_id > traders[trader_id]->order_id);
+        notify_trader(trader_id, order_id, 3);
         return;
     } 
 
