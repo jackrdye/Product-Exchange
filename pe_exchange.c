@@ -91,15 +91,15 @@ void cleanup_orders_queue(Queue* queue) {
 void cleanup_orderbooks() {
     // Loop each orderbook
     for (int i = 0; i < num_products; i++) {
-        printf("Cleanup %s orderbook\n", orderbooks[i]->product);
+        // printf("Cleanup %s orderbook\n", orderbooks[i]->product);
         for (int j = 0; j < 2; j++) {
             PriceLevel* currentlevel;
             // Set starting pricelevel - Buys or Sells
             if (j == 0) {
-                printf("buys-starting pricelevel located at %p\n", orderbooks[i]->buys);
+                // printf("buys-starting pricelevel located at %p\n", orderbooks[i]->buys);
                 currentlevel = orderbooks[i]->buys; 
             } else if (j == 1) {
-                printf("sells-starting pricelevel located at %p\n", orderbooks[i]->sells);
+                // printf("sells-starting pricelevel located at %p\n", orderbooks[i]->sells);
                 currentlevel = orderbooks[i]->sells;
             }
             // Free pricelevels
@@ -389,7 +389,7 @@ void print_orderbooks() {
 }
 
 void print_traders_positions() {
-    printf("[PEX\t--POSITIONS--]\n");
+    printf("[PEX]\t--POSITIONS--\n");
     for (int i = 0; i < num_traders; i++) {
         printf("[PEX]\tTrader %d: ", i);
         for (int j = 0; j < num_products; j++) {
@@ -397,7 +397,7 @@ void print_traders_positions() {
             if (j != num_products-1) {
                 printf("%s %d ($%d), ", position->product, position->quantity, position->balance);
             } else {
-                printf("%s %d ($%d)", position->product, position->quantity, position->balance);
+                printf("%s %d ($%d)\n", position->product, position->quantity, position->balance);
             }
         }
     }
@@ -744,7 +744,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     for (int i = 0; i < num_products; i++) {
         if (strcmp(product, orderbooks[i]->product) == 0) {
             orderbook = orderbooks[i];
-            printf("Insert Order - Found %s's orderbook\n", product);
+            // printf("Insert Order - Found %s's orderbook\n", product);
         }
     }
     if (orderbook == NULL) {
@@ -753,12 +753,12 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
         return false;
     }
 
-    printf("Orderbook -> product = (%s)", orderbook->product);
+    // printf("Orderbook -> product = (%s)", orderbook->product);
     PriceLevel* currentlevel = orderbook->buys;
 
     // Empty Orderbook || Insert new pricelevel at head of 'buys'
     if (currentlevel == NULL || price > currentlevel->price) {
-        printf("Create new pricelevel at head.\n");
+        // printf("Create new pricelevel at head.\n");
         PriceLevel* new_pricelevel = (PriceLevel*) malloc(sizeof(PriceLevel));
         // printf("Pricelevel allocated at %p\n", new_pricelevel);
         new_pricelevel->price = price;
