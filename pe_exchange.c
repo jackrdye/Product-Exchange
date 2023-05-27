@@ -307,6 +307,7 @@ char** read_products_file(int *size) {
     products = realloc(products, i * sizeof(char*));
     if (products == NULL) {
         write(STDERR_FILENO, "Failed to allocate memory\n", strlen("Failed to allocate memory\n"));
+        exit(EXIT_FAILURE);
     }
     *size = i;
     return products;
@@ -759,7 +760,7 @@ bool insert_buy_order(int order_id, int trader_id, int quantity, int price, char
     }
     if (orderbook == NULL) {
         // Invalid product
-        printf("Insert Order - Couldn't find %s's orderbook\n", product);
+        // printf("Insert Order - Couldn't find %s's orderbook\n", product);
         return false;
     }
 
@@ -1069,12 +1070,8 @@ void receive_order(int trader_id) {
                 match_sell_order(traders[trader_id]->orders[order_id]);
             }
 
-
-
             free(temp_buy_or_sell);
             free(temp_product);
-            
-            // Check if amended order hits any existing orders
 
         }
 
