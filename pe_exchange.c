@@ -704,7 +704,7 @@ void match_sell_order(OrderNode* order) {
                 // Remaining units in existing order - Remove new order
                 unsigned int purchase_quantity = order->quantity;
                 buy_order->quantity -= order->quantity;
-                unsigned int value = purchase_quantity * buy_order->pricelevel->price;
+                unsigned int value = purchase_quantity * buy_level->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 

@@ -15,8 +15,8 @@ typedef struct Position Position;
 
 struct Position {
     char product[MAX_PRODUCT_LEN];
-    unsigned int quantity;
-    int balance;
+    int quantity;
+    long long balance;
 };
 
 
