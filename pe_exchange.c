@@ -396,9 +396,9 @@ void print_traders_positions() {
         for (int j = 0; j < num_products; j++) {
             Position* position = traders[i]->positions[j];
             if (j != num_products-1) {
-                printf("%s %d ($%d), ", position->product, position->quantity, position->balance);
+                printf("%s %d ($%lld), ", position->product, position->quantity, position->balance);
             } else {
-                printf("%s %d ($%d)\n", position->product, position->quantity, position->balance);
+                printf("%s %d ($%lld)\n", position->product, position->quantity, position->balance);
             }
         }
     }
