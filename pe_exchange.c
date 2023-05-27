@@ -671,6 +671,12 @@ void match_sell_order(OrderNode* order) {
 
                 notify_traders_of_fill(order->trader_id, order->order_id, buy_order->trader_id, buy_order->order_id, purchase_quantity);
 
+                // Next price level
+                if (buy_order->next == NULL) {
+                    // Pricelevel is now empty - will be removed with the order
+                    buy_level = buy_level->next; // Move to next pricelevel
+                } 
+                
                 OrderNode* temp = buy_order->next;
                 remove_order(buy_order);
                 buy_order = temp;
@@ -716,7 +722,7 @@ void match_sell_order(OrderNode* order) {
                 return;
             }
         }
-        buy_level = buy_level->next;
+        
     }
 }
 
