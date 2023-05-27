@@ -576,7 +576,7 @@ void update_positions(Position* buyer_position, Position* seller_position, unsig
         buyer_position->balance -= value;
         buyer_position->quantity += quantity;
         // Update Sellers positions
-        seller_position->balance = buyer_position->balance + value - fee;
+        seller_position->balance = seller_position->balance + value - fee;
         seller_position->quantity -= quantity;
 
     } else {
