@@ -286,6 +286,9 @@ char** read_products_file(int *size) {
     }
 
     while (fgets(product, MAX_PRODUCT_LEN, file) != NULL) {
+        if (strcmp(product, "\n")) {
+            continue;
+        }
         if (i % 20 == 0) {
             // Extend products array (every 20 products)
             chunks += 1;
