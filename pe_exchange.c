@@ -596,7 +596,7 @@ void match_buy_order(OrderNode* order) {
             if (order->quantity > sell_order->quantity) {
                 // Remaining units in new order - Remove existing order
                 unsigned int purchase_quantity = sell_order->quantity;
-                long long value = purchase_quantity * sell_order->pricelevel->price;
+                long long value = (long long)purchase_quantity * (long long)sell_order->pricelevel->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 
@@ -623,7 +623,7 @@ void match_buy_order(OrderNode* order) {
                 // Remaining units in existing order - Remove new order
                 unsigned int purchase_quantity = order->quantity;
                 sell_order->quantity -= order->quantity;
-                long long value = purchase_quantity * sell_order->pricelevel->price;
+                long long value = (long long)purchase_quantity * (long long)sell_order->pricelevel->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 
@@ -641,7 +641,7 @@ void match_buy_order(OrderNode* order) {
             } else if (order->quantity == sell_order->quantity) {
                 // Both orders fully filled - Remove both orders
                 unsigned int purchase_quantity = sell_order->quantity;
-                long long value = purchase_quantity * sell_order->pricelevel->price;
+                long long value = (long long)purchase_quantity * (long long)sell_order->pricelevel->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 
@@ -677,7 +677,7 @@ void match_sell_order(OrderNode* order) {
             if (order->quantity > buy_order->quantity) {
                 // Remaining units in new order - Remove existing order
                 unsigned int purchase_quantity = buy_order->quantity;
-                long long value = purchase_quantity * buy_order->pricelevel->price;
+                long long value = (long long)purchase_quantity * (long long)buy_order->pricelevel->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 printf("Price %u, quantity %u, value %lld, fee %u\n", buy_level->price, purchase_quantity, value, fee);
@@ -704,7 +704,7 @@ void match_sell_order(OrderNode* order) {
                 // Remaining units in existing order - Remove new order
                 unsigned int purchase_quantity = order->quantity;
                 buy_order->quantity -= order->quantity;
-                long long value = purchase_quantity * buy_level->price;
+                long long value = (long long)purchase_quantity * (long long)buy_level->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 
@@ -723,7 +723,7 @@ void match_sell_order(OrderNode* order) {
             } else if (order->quantity == buy_order->quantity) {
                 // Both orders fully filled - Remove both orders
                 unsigned int purchase_quantity = buy_order->quantity;
-                long long value = purchase_quantity * buy_order->pricelevel->price;
+                long long value = (long long)purchase_quantity * (long long)buy_order->pricelevel->price;
                 unsigned int fee = (int)((double) value * FEE_PERCENTAGE / 100 + 0.5);
                 order->quantity -= purchase_quantity;
                 
