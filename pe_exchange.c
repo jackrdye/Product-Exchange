@@ -1168,7 +1168,7 @@ int main(int argc, char **argv) {
             cleanup_traders();
             if (trading_complete) {
                 printf("[PEX] Trading completed\n");
-                printf("[PEX] Exchange fees collected: $%d\n", exchange_fees);
+                printf("[PEX] Exchange fees collected: $%llu\n", exchange_fees);
                 exit(EXIT_SUCCESS);
             } else if (terminate) {
                 exit(EXIT_FAILURE);
