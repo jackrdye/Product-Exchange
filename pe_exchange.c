@@ -1016,13 +1016,13 @@ void receive_order(int trader_id) {
         result = sscanf(order_msg, "%10s %u %u %u", order_type, &order_id, &quantity, &price);
 
         // Validate order_id
-        if (order_id >= traders[trader_id]->order_id) {
+        if (order_id >= traders[trader_id]->order_id || price < 1 || price > 999999 || quantity < 1 || quantity > 999999) {
             notify_trader(trader_id, order_id, 3);
             return;
         }
         OrderNode* order = traders[trader_id]->orders[order_id];
         
-        // Order Filled or Cancelled
+        // Order already Filled or Cancelled
         if (order == NULL) {
             notify_trader(trader_id, order_id, 3);
             return;
