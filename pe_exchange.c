@@ -18,6 +18,7 @@ Trader** traders;
 int num_products;
 char** products;
 OrderBook** orderbooks;
+int exchange_fees = 0;
 
 
 // ------------------------- Signals -----------------------------
@@ -564,7 +565,7 @@ void remove_order(OrderNode* order) {
 void update_positions(Position* buyer_position, Position* seller_position, unsigned int quantity, unsigned int value, unsigned int fee, char* pays_fee) {
     if (strcmp(pays_fee, "BUYER") == 0) {
         // Update Buyers positions
-        buyer_position->balance -= (value + fee);
+        buyer_position->balance -= (value - fee);
         buyer_position->quantity += quantity;
         // Update Sellers positions
         seller_position->balance += value;
@@ -575,13 +576,14 @@ void update_positions(Position* buyer_position, Position* seller_position, unsig
         buyer_position->balance -= value;
         buyer_position->quantity += quantity;
         // Update Sellers positions
-        seller_position->balance += (value + fee);
+        seller_position->balance += (value - fee);
         seller_position->quantity -= quantity;
 
     } else {
         printf("Exchange Error - update_position - Declare buyer or seller pays fee\n");
         exit(EXIT_FAILURE);
     }
+    exchange_fees += fee;
 }
 
 void match_buy_order(OrderNode* order) {
@@ -1158,6 +1160,7 @@ int main(int argc, char **argv) {
             cleanup_traders();
             if (trading_complete) {
                 printf("[PEX] Trading completed\n");
+                printf("[PEX] Exchange fees collected: $%d\n", exchange_fees);
                 exit(EXIT_SUCCESS);
             } else if (terminate) {
                 exit(EXIT_FAILURE);
