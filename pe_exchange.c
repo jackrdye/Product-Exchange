@@ -471,14 +471,6 @@ OrderBook* create_orderbook(char* product, unsigned int product_num) {
     return orderbook;
 }
 
-// void insert_pricelevel_into_orderbook() {
-
-// }
-
-// void insert_order_into_pricelevel() {
-
-// }
-
 void remove_pricelevel_from_orderbook(PriceLevel* pricelevel) {
     // Identify BUY or SELL orderbook
     PriceLevel** head_ref;
@@ -959,13 +951,9 @@ void receive_order(int trader_id) {
     int result = sscanf(order_msg, "%10s %u", order_type, &order_id);
     if (result != 2) {
         // Invalid Order
-        notify_trader(trader_id, order_id, 3);
+        notify_trader(trader_id, order_id, 3 || order_id > traders[trader_id]->order_id);
         return;
-    } else if (order_id > traders[trader_id]->order_id) {
-        // Invalid Order
-        notify_trader(trader_id, order_id, 3);
-        return;
-    }
+    } 
 
     if (strcmp(order_type, "BUY") == 0) {
         char product[MAX_PRODUCT_LEN];
@@ -974,8 +962,8 @@ void receive_order(int trader_id) {
         result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
         // Check if new order hits any existing sell orders
 
-        // Validate order_id
-        if (order_id != traders[trader_id]->order_id) {
+        // Validate order_id, price, quantity
+        if (order_id != traders[trader_id]->order_id || price < 1 || price > 999999 || quantity < 1 || quantity > 999999) {
             notify_trader(trader_id, order_id, 3);
             return;
         }
@@ -1000,8 +988,8 @@ void receive_order(int trader_id) {
         unsigned int price;
         result = sscanf(order_msg, "%10s %u %16s %u %u", order_type, &order_id, product, &quantity, &price);
 
-        // Validate order_id
-        if (order_id != traders[trader_id]->order_id) {
+        // Validate order_id, price, quantity
+        if (order_id != traders[trader_id]->order_id || price < 1 || price > 999999 || quantity < 1 || quantity > 999999) {
             notify_trader(trader_id, order_id, 3);
             return;
         }
