@@ -1,0 +1,20 @@
+---Exchange STDOUT---
+[PEX] Starting
+[PEX] Trading 1 products: Upvote
+[PEX] Created FIFO /tmp/pe_exchange_0
+[PEX] Created FIFO /tmp/pe_trader_0
+[PEX] Starting trader 0 (./bin/pex_test1_trader)
+[PEX] Connected to /tmp/pe_exchange_0
+[PEX] Connected to /tmp/pe_trader_0
+[PEX] [T0] Parsing command: <BUY 0 Upvote: 500 2>
+[PEX]   --ORDERBOOK--
+[PEX]    Product: Upvote; Buy levels: 1; Sell levels: 0
+[PEX]        BUY 500 @ $2 (1 order)
+[PEX]    --POSITIONS--
+[PEX]    Trader 0: Upvote 0 ($0)
+[PEX] [T0] Parsing command: <SELL 1 Upvote: 500 2>
+[PEX] Match: Order 0 [T0], New Order 1 [T0], value: $1000, fee: $10.
+[PEX]   --ORDERBOOK--
+[PEX]    Product: Upvote; Buy levels: 0; Sell levels: 0
+[PEX]    --POSITIONS--
+[PEX]    Trader 0: Upvote 0 ($-10)

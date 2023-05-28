@@ -1,0 +1,8 @@
+---Trader0---
+[Trader 0] [t=0] Received from PEX: MARKET OPEN;
+[Trader 0] [t=1] Event: BUY 0 Upvote 500 2;
+[Trader 0] [t=1] Received from PEX: ACCEPTED 0;
+[Trader 0] [t=2] Event: SELL 1 Upvote 500 2;
+[Trader 0] [t=2] Received from PEX: FILL 0 500;
+[Trader 0] [t=2] Received from PEX: FILL 1 500;
+[Trader 0] [t=3] Event: DISCONNECT
