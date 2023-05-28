@@ -11,4 +11,5 @@
    The trader is efficient as it rests until a new signal is received from the exchange. This means that only when some new change occurs in the orderbook of the exchange does the trader ‘wake up’ to access and respond accordingly.
    ![Diagram](images/Trader-Diagram.png)
 
-3. Describe your tests and how to run them.
+3. Describe your tests and how to run them. <br>
+   I wrote a test case which tests for the execution of a trade against the same trader, i.e. a trader matches with themselves. To run the tests you would need to link the text file provided to the trader such that it submits the order. Log the interactions between pipes then perform a diff on the trader and exchange files stdout.<br>
