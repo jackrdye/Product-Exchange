@@ -201,7 +201,7 @@ Order *find_order_by_id(Trader *trader, unsigned int order_id) {
         }
     }
     perror("find_order_by_id - Couldn't find order");
-    exit(1);
+    return NULL;
 }
 
 // ------------------ Trader Logic ----------------------
@@ -219,6 +219,9 @@ void handle_exchange_message(Trader *trader) {
     if (strcmp(message_type, "ACCEPTED") == 0) {
         // Declare order active
         Order *order = find_order_by_id(trader, order_id);
+        if (find_order_by_id == NULL) {
+            return;
+        }
         order->active = true;
         trader->order_id ++; // Only increment trader's order_id after order is accepted - This ensures default is to overwrite invalid orders 
     } else if (strcmp(message_type, "AMENDED") == 0) {
@@ -226,6 +229,9 @@ void handle_exchange_message(Trader *trader) {
     } else if (strcmp(message_type, "CANCELLED") == 0) {
         // Declare order inactive
         Order *order = find_order_by_id(trader, order_id);
+        if (find_order_by_id == NULL) {
+            return;
+        }
         order->active = false;
     } else if (strcmp(message_type, "INVALID") == 0) {
         // Unsure how to ensure this is safe - What can cause an INVALID?
@@ -241,6 +247,9 @@ void handle_exchange_message(Trader *trader) {
         unsigned int quantity;
         sscanf(message, "%6s %d %d;", message_type, &order_id, &quantity);
         Order *order = find_order_by_id(trader, order_id);
+        if (find_order_by_id == NULL) {
+            return;
+        }
         
         // Ensure valid quantity
         unsigned int new_filled = order->quantity_filled + quantity;
@@ -265,10 +274,11 @@ void handle_exchange_message(Trader *trader) {
         }
         // Decide if trader should respond with another order
         // Auto-Trader - If MARKET SELL order available - place BUY
-        if (strcmp(type, "SELL" )== 0) {
+        if (strcmp(type, "SELL" ) == 0) {
             if (quantity >= 1000) {
                 cleanup_trader(trader);
-                exit(1);
+                terminate = true;
+                return;
             }
             char opposite_type[5];
             (strcmp(type, "BUY") == 0) ? strcpy(opposite_type, "SELL") : strcpy(opposite_type, "BUY");
@@ -286,10 +296,6 @@ void handle_exchange_message(Trader *trader) {
     }
 
 }
-void parse_exchange_message(char *message) {
-    
-}
-
 
 
 int main (int argc, char ** argv) {
@@ -310,7 +316,7 @@ int main (int argc, char ** argv) {
         if (terminate == true) {
             write(STDOUT_FILENO, "Terminate\n", strlen("Terminate\n"));
             cleanup_trader(pe_trader);
-            exit(1);
+            exit(0);
 
         } else if (exchange_message == false) {
             pause();
