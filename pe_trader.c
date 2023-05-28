@@ -219,7 +219,7 @@ void handle_exchange_message(Trader *trader) {
     if (strcmp(message_type, "ACCEPTED") == 0) {
         // Declare order active
         Order *order = find_order_by_id(trader, order_id);
-        if (find_order_by_id == NULL) {
+        if (order == NULL) {
             return;
         }
         order->active = true;
@@ -229,7 +229,7 @@ void handle_exchange_message(Trader *trader) {
     } else if (strcmp(message_type, "CANCELLED") == 0) {
         // Declare order inactive
         Order *order = find_order_by_id(trader, order_id);
-        if (find_order_by_id == NULL) {
+        if (order == NULL) {
             return;
         }
         order->active = false;
@@ -247,7 +247,7 @@ void handle_exchange_message(Trader *trader) {
         unsigned int quantity;
         sscanf(message, "%6s %d %d;", message_type, &order_id, &quantity);
         Order *order = find_order_by_id(trader, order_id);
-        if (find_order_by_id == NULL) {
+        if (order == NULL) {
             return;
         }
         
