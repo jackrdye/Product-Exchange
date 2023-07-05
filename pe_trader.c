@@ -155,6 +155,7 @@ void buy_order(Trader *trader, char *product, unsigned int quantity, unsigned in
     new_order->quantity_filled = 0;
     new_order->active = true;
 }
+
 void sell_order(Trader *trader, char *product, unsigned int quantity, unsigned int price) {
     char buf[128]; memset(buf, 0, sizeof(buf));
     sprintf(buf, "SELL %u %s %u %u;", trader->order_id, product, quantity, price);
@@ -170,6 +171,7 @@ void sell_order(Trader *trader, char *product, unsigned int quantity, unsigned i
     new_order->quantity_filled = 0;
     new_order->active = true;
 }
+
 void amend_order(Trader *trader, unsigned int order_id, unsigned int quantity, unsigned int price) {
     char buf[128]; memset(buf, 0, sizeof(buf));
     sprintf(buf, "AMEND %u %u %u;", order_id, quantity, price);
